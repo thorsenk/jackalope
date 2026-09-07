@@ -19,10 +19,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Unpack seeded application source
+        run: |
+          set -euo pipefail
+          cat .seed/source.tgz.b64.part* | base64 -d | tar -xz
+          test -f package.json
+          test -f src/app/page.tsx
+          test -f src/components/workshop/capture-stage.tsx
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
       - run: npm install
       - run: npm run build
         env:
