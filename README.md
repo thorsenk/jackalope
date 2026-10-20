@@ -44,3 +44,7 @@ The interface refactor's baseline findings, screenshots, and verification record
 ## Interface
 
 Next.js, TypeScript, Tailwind CSS, Base UI/shadcn, and Lucide. The current charcoal/indigo interface uses the existing `nice-things-interface` token family. Application layout lives in one responsive stylesheet; reusable controls, tooltips, menus, toggles, fields, alerts, and empty states use the shared component layer.
+
+### Positioning reviews
+
+A source document with four numbered candidate quotations and the six-part evaluation rubric gets a positioning flow: compare the original wording on each source criterion, add evidence, then choose or revise wording separately. Judgments begin blank. Review confirmation records a local review brief; it does not finalize company positioning. Revisions do not inherit earlier sentence ratings, and changed source retains prior review snapshots. Other documents keep the general workshop flow.

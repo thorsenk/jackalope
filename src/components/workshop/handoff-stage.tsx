@@ -244,7 +244,12 @@ export function HandoffStage({
           ))}
         {history.length > 0 && (
           <details className="source-reference">
-            <summary>Decision history ({history.length})</summary>
+            <summary>
+              {positioning
+                ? "Earlier general-workshop history"
+                : "Decision history"}{" "}
+              ({history.length})
+            </summary>
             <div>
               {history.map((claim) => (
                 <section key={claim.id}>

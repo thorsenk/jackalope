@@ -1607,3 +1607,12 @@ p {
   width: 13px;
   height: 13px;
 }
+
+@media (max-width: 380px) {
+  .rubric-matrix {
+    font-size: var(--type-caption);
+  }
+  .rubric-matrix th:first-child {
+    width: 40%;
+  }
+}
