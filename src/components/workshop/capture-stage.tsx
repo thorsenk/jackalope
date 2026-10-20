@@ -65,6 +65,7 @@ export function CaptureStage({
   );
   const words = captureWordCount(session.rawCapture);
   const cornell = variant === "cornell";
+  const showOutline = cornell || (!editing && sections.length > 1);
   const sectionIndex = Math.min(
     activeSection,
     Math.max(0, sections.length - 1),
@@ -109,9 +110,9 @@ export function CaptureStage({
     }
   }
 
-  return (
-    <div className="capture-workspace">
-      <div className="document-toolbar">
+  const toolbar = (
+    <div className="document-toolbar">
+      {(words > 0 || !editing) && (
         <ToggleGroup
           aria-label="Document view"
           value={[editing ? "edit" : "read"]}
@@ -119,61 +120,77 @@ export function CaptureStage({
             if (values.length) setEditing(values[0] === "edit");
           }}
         >
-          <ToggleGroupItem value="read">
+          <ToggleGroupItem
+            value="read"
+            aria-label="Read notes"
+            title="Read notes"
+          >
             <BookOpen aria-hidden="true" />
-            Read
+            <span className="mode-label">Read</span>
           </ToggleGroupItem>
-          <ToggleGroupItem value="edit">
+          <ToggleGroupItem
+            value="edit"
+            aria-label="Edit notes"
+            title="Edit notes"
+          >
             <Pencil aria-hidden="true" />
-            Edit
+            <span className="mode-label">Edit</span>
           </ToggleGroupItem>
         </ToggleGroup>
-        <div className="inline-actions">
-          <span className="word-count">{words.toLocaleString()} words</span>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Document actions"
-                />
-              }
-            >
-              <MoreHorizontal aria-hidden="true" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => downloadBackup(session)}>
-                  <Download />
-                  Download backup
+      )}
+      <div className="inline-actions">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Document actions"
+              />
+            }
+          >
+            <MoreHorizontal aria-hidden="true" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => downloadBackup(session)}>
+                <Download />
+                Download backup
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => fileInput.current?.click()}>
+                <Upload />
+                Import backup
+              </DropdownMenuItem>
+              {!session.rawCapture.trim() && (
+                <DropdownMenuItem onClick={onLoadSample}>
+                  <FlaskConical />
+                  Try sample
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => fileInput.current?.click()}>
-                  <Upload />
-                  Import backup
-                </DropdownMenuItem>
-                {!session.rawCapture.trim() && (
-                  <DropdownMenuItem onClick={onLoadSample}>
-                    <FlaskConical />
-                    Try sample
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <HelpTip label="About source notes">
-            Your original wording stays here. Reading a section does not approve
-            it. Work saves in this browser; download a backup to move it.
-          </HelpTip>
-        </div>
-        <input
-          ref={fileInput}
-          type="file"
-          accept="application/json,.json"
-          hidden
-          onChange={(event) => void importCapture(event.target.files?.[0])}
-        />
+              )}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <HelpTip label="About source notes">
+          Read or edit your notes. Section checkmarks track reading, not
+          approval. Download a backup from the menu.
+        </HelpTip>
       </div>
+      <input
+        ref={fileInput}
+        type="file"
+        accept="application/json,.json"
+        hidden
+        onChange={(event) => void importCapture(event.target.files?.[0])}
+      />
+    </div>
+  );
+
+  return (
+    <div className="capture-workspace">
+      <header className="task-heading">
+        <h2>{words === 0 ? "Start with your idea." : "Your project notes."}</h2>
+        <p>Add the context you want the brief to preserve.</p>
+      </header>
       {notice && (
         <Alert>
           <AlertDescription>{notice}</AlertDescription>
@@ -182,11 +199,11 @@ export function CaptureStage({
       <div
         className={cn(
           "capture-grid",
-          sections.length === 0 && "without-outline",
+          !showOutline && "without-outline",
           cornell && "cornell-grid",
         )}
       >
-        {(sections.length > 0 || cornell) && (
+        {showOutline && (
           <aside className="document-outline" aria-label="Document outline">
             <h2 className="eyebrow">
               <List aria-hidden="true" />
@@ -270,12 +287,13 @@ export function CaptureStage({
             <h2>
               <FileText aria-hidden="true" />
               {editing
-                ? "Source notes"
+                ? "Your notes"
                 : readAll
                   ? "All notes"
                   : (current?.title ?? "Notes")}
             </h2>
-            <div className="inline-actions">
+            {toolbar}
+            <div className="reading-actions">
               {!editing && current && (
                 <>
                   <IconAction
@@ -284,10 +302,6 @@ export function CaptureStage({
                     aria-pressed={readAll}
                     onClick={() => setReadAll(!readAll)}
                   />
-                  <HelpTip label="About section review">
-                    Checkmarks track what you have read. They do not approve the
-                    content.
-                  </HelpTip>
                 </>
               )}
             </div>
@@ -317,25 +331,25 @@ export function CaptureStage({
                           .trim(),
                       );
                   }}
-                  placeholder={
-                    "What's the idea?\n\nPaste your notes, describe the outcome, and keep what worries you."
-                  }
+                  placeholder={"Write or paste your notes…"}
                 />
               </Field>
-              <div className="selection-actions">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={!selection}
-                  onClick={() => {
-                    onChange(moveConcern(session, selection, "open"));
-                    setSelection("");
-                  }}
-                >
-                  <Plus data-icon="inline-start" />
-                  Add selection as concern
-                </Button>
-              </div>
+              {selection && (
+                <div className="selection-actions">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={!selection}
+                    onClick={() => {
+                      onChange(moveConcern(session, selection, "open"));
+                      setSelection("");
+                    }}
+                  >
+                    <Plus data-icon="inline-start" />
+                    Add selection as concern
+                  </Button>
+                </div>
+              )}
             </div>
           ) : current ? (
             <>
@@ -390,6 +404,13 @@ export function CaptureStage({
               </Button>
             </div>
           )}
+          {words > 0 && (
+            <div className="document-meta">
+              <span>
+                {words.toLocaleString()} {words === 1 ? "word" : "words"}
+              </span>
+            </div>
+          )}
           {cornell && (
             <Field className="cornell-summary">
               <FieldLabel htmlFor="cornell-summary">Synthesis</FieldLabel>
@@ -414,8 +435,8 @@ export function CaptureStage({
       >
         <span>
           {session.rawCapture.trim().length === 0
-            ? "Add notes to begin."
-            : `${sections.length} section${sections.length === 1 ? "" : "s"} · ${session.concerns.length} open concern${session.concerns.length === 1 ? "" : "s"}`}
+            ? "Add notes to continue"
+            : "Next: make the key decisions"}
         </span>
       </StageFooter>
     </div>

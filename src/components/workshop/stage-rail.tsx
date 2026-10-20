@@ -33,7 +33,9 @@ export function StageRail({
                 aria-current={step === stage ? "step" : undefined}
                 onClick={() => onSelect?.(step)}
               >
-                <Icon aria-hidden="true" />
+                <span className="step-icon">
+                  <Icon aria-hidden="true" />
+                </span>
                 <span>{STAGE_LABELS[step]}</span>
               </Button>
             </li>

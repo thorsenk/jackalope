@@ -29,6 +29,8 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
 } from "@/components/ui/empty";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -89,17 +91,22 @@ export function ConcernsPanel({
       <div className="panel-toolbar">
         <h2 id="concerns-title">
           <CircleHelp aria-hidden="true" />
-          Concerns <Badge variant="secondary">{session.concerns.length}</Badge>
+          Concerns{" "}
+          {session.concerns.length > 0 && (
+            <Badge variant="secondary">{session.concerns.length}</Badge>
+          )}
         </h2>
         <div className="inline-actions">
           <HelpTip label="About concerns">
             Resolve before approval, or carry an open question into the brief.
           </HelpTip>
-          <IconAction
-            label={adding ? "Cancel new concern" : "Add concern"}
-            icon={adding ? X : Plus}
-            onClick={() => setAdding(!adding)}
-          />
+          {(session.concerns.length > 0 || adding || review) && (
+            <IconAction
+              label={adding ? "Cancel new concern" : "Add concern"}
+              icon={adding ? X : Plus}
+              onClick={() => setAdding(!adding)}
+            />
+          )}
         </div>
       </div>
       {adding && (
@@ -131,14 +138,33 @@ export function ConcernsPanel({
         </form>
       )}
       <div className="concern-list">
-        {session.concerns.length === 0 && (
+        {session.concerns.length === 0 && !adding && (
           <Empty className="quiet-empty">
             <EmptyHeader>
               <EmptyMedia>
-                <CircleCheck aria-hidden="true" />
+                {review ? (
+                  <CircleCheck aria-hidden="true" />
+                ) : (
+                  <CircleHelp aria-hidden="true" />
+                )}
               </EmptyMedia>
-              <EmptyTitle>No open concerns</EmptyTitle>
+              <EmptyTitle>
+                {review ? "No open concerns" : "Anything to watch out for?"}
+              </EmptyTitle>
+              {!review && (
+                <EmptyDescription>
+                  Keep questions and risks beside your notes.
+                </EmptyDescription>
+              )}
             </EmptyHeader>
+            {!review && (
+              <EmptyContent>
+                <Button variant="outline" onClick={() => setAdding(true)}>
+                  <Plus data-icon="inline-start" />
+                  Add concern
+                </Button>
+              </EmptyContent>
+            )}
           </Empty>
         )}
         {session.concerns.map((text, index) => (

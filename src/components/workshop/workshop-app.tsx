@@ -134,8 +134,8 @@ export function WorkshopApp({
     <div className="workshop-app">
       <div className="workshop-heading">
         <Field>
-          <FieldLabel className="sr-only" htmlFor="workshop-title">
-            Workshop title
+          <FieldLabel className="project-label" htmlFor="workshop-title">
+            Project
           </FieldLabel>
           <Input
             id="workshop-title"
