@@ -1,6 +1,6 @@
 # Workshop interface review — October 20, 2026
 
-Baseline: deployed commit 55fe6c0, using an isolated Interface review fixture. Saved screenshots: before-capture.png, before-clarify.png, before-review.png. No real project decisions were approved.
+Baseline: deployed commit 55fe6c0, using an isolated Interface review fixture. Saved screenshots: before-capture.jpg, before-clarify.jpg, before-review.jpg. No real project decisions were approved.
 
 1. Capture: the primary task starts below a large navigation rail, repeated stage explanation, oversized title panel, and toolbar. Repeated instructions compete with the source. Consolidate title/status; compact the stage rail; keep one document toolbar and one next action.
 2. Clarify: a generic “Start from your captured wording” option hides the actual proposal behind selection. Show actual wording immediately; use concise Accept / Edit / Reject actions with consistent icons.
