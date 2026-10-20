@@ -68,6 +68,7 @@ export interface WorkshopSession {
   claims: Claim[];
   lockedAt?: string;
   handoffStatus: HandoffStatus;
+  positioningReviews?: PositioningReview[];
 }
 
 export const STAGE_ORDER: Stage[] = ["capture", "clarify", "lock", "handoff"];
@@ -103,3 +104,17 @@ export const LOCK_GATE_KINDS: ClaimKind[] = [
   "shared_term",
   "authorization",
 ];
+
+export type PositioningRating = "meets" | "needs-work" | "unsure";
+export interface PositioningAssessment {
+  sentence: string;
+  ratings: Record<string, PositioningRating>;
+  notes: Record<string, string>;
+}
+export interface PositioningReview {
+  /** Exact source snapshot; changed source starts a separate review, retaining this one. */
+  source: string;
+  assessments: PositioningAssessment[];
+  draftSentence: string;
+  selectedSentence?: string;
+}

@@ -380,6 +380,7 @@ export function patchWorkshopSession(
 ): WorkshopSession {
   const contentKeys = [
     "rawCapture",
+    "positioningReviews",
     "claims",
     "title",
     "concerns",

@@ -465,3 +465,211 @@ test("accepting wording settles its draft and keeps alternate drafts as history"
     ),
   );
 });
+
+const positioningLib = require(path.join(lib, "positioning.ts"));
+const positioningFixture = [
+  ...[
+    "Tools for gardeners.",
+    "We help growers plan.",
+    "A local planting service.",
+    "Planning without data sales.",
+  ].map((sentence, i) => `### C${i + 1} · Option\n> ${sentence}`),
+  "## Evaluation rubric",
+  ...[
+    "Clarity",
+    "Distinctness",
+    "Voice fit",
+    "Compression",
+    "Promise honesty",
+    "Cold-read test",
+  ].map((label, i) => `${i + 1}. **${label}** — Source question ${i + 1}?`),
+  "Two failures return to iteration. Passing is not official positioning.",
+].join("\n\n");
+test("positioning flow uses the four exact candidates and six exact source criteria", () => {
+  const source = positioningLib.positioningSource(positioningFixture);
+  assert.equal(source.candidates.length, 4);
+  assert.equal(source.criteria.length, 6);
+  assert.equal(source.criteria[4].question, "Source question 5?");
+  assert.equal(source.candidates[0].sentence, "Tools for gardeners.");
+  assert.equal(
+    positioningLib.positioningSource(
+      positioningFixture.replace("**Promise honesty**", "**Permissions**"),
+    ),
+    null,
+  );
+  assert.equal(
+    positioningLib.positioningSource(
+      "## Evaluation rubric\n1. **Clarity** — A fragment",
+    ),
+    null,
+  );
+});
+test("positioning judgments never select a winner or pass unknowns; source rule requires iteration after two failures", () => {
+  const source = positioningLib.positioningSource(positioningFixture);
+  let session = { ...createEmptySession(), rawCapture: positioningFixture };
+  let patch = positioningLib.updatePositioningReview(session, (review) =>
+    positioningLib.updateAssessment(review, source.candidates[0].sentence, {
+      ratings: Object.fromEntries(source.criteria.map((c) => [c.id, "meets"])),
+    }),
+  );
+  session = { ...session, ...patch };
+  assert.equal(
+    positioningLib.currentPositioningReview(session).selectedSentence,
+    undefined,
+  );
+  assert.equal(
+    positioningLib.positioningStatus(
+      source,
+      positioningLib.currentPositioningReview(session),
+    ).ready,
+    false,
+  );
+  session = {
+    ...session,
+    ...positioningLib.updatePositioningReview(session, (review) => ({
+      ...review,
+      selectedSentence: source.candidates[0].sentence,
+    })),
+  };
+  assert.equal(
+    positioningLib.positioningStatus(
+      source,
+      positioningLib.currentPositioningReview(session),
+    ).ready,
+    true,
+  );
+  for (const [ratings, ready] of [
+    [{ clarity: "needs-work" }, true],
+    [{ distinctness: "needs-work" }, false],
+    [{ clarity: "unsure" }, false],
+  ]) {
+    session = {
+      ...session,
+      ...positioningLib.updatePositioningReview(session, (review) =>
+        positioningLib.updateAssessment(review, source.candidates[0].sentence, {
+          ratings,
+        }),
+      ),
+    };
+    assert.equal(
+      positioningLib.positioningStatus(
+        source,
+        positioningLib.currentPositioningReview(session),
+      ).ready,
+      ready,
+    );
+  }
+  assert.equal(session.lockedAt, undefined);
+});
+test("positioning backup, source changes, revision identity, and export preserve human review state", () => {
+  const source = positioningLib.positioningSource(positioningFixture);
+  let session = { ...createEmptySession(), rawCapture: positioningFixture };
+  session = {
+    ...session,
+    ...positioningLib.updatePositioningReview(session, (review) => ({
+      ...positioningLib.updateAssessment(review, "Original custom wording", {
+        ratings: { clarity: "meets" },
+        notes: { clarity: "Reader evidence" },
+      }),
+      draftSentence: "Revised wording",
+      selectedSentence: "Revised wording",
+    })),
+  };
+  const restored = parseWorkshopBackup(JSON.parse(JSON.stringify(session)));
+  assert.deepEqual(restored.positioningReviews, session.positioningReviews);
+  assert.equal(
+    positioningLib.positioningStatus(
+      source,
+      positioningLib.currentPositioningReview(restored),
+    ).missing,
+    6,
+  );
+  assert.equal(
+    positioningLib.currentPositioningReview({
+      ...session,
+      rawCapture: positioningFixture + "\nNew context",
+    }),
+    undefined,
+  );
+  assert.equal(
+    restored.positioningReviews[0].assessments[0].sentence,
+    "Original custom wording",
+  );
+  assert.equal(
+    parseWorkshopBackup({
+      ...session,
+      positioningReviews: [
+        {
+          ...session.positioningReviews[0],
+          assessments: [
+            {
+              sentence: "bad",
+              ratings: { clarity: "automatic-pass" },
+              notes: {},
+            },
+          ],
+        },
+      ],
+    }),
+    null,
+  );
+  const markdown = briefToMarkdown(session);
+  assert.ok(markdown.includes("Positioning review"));
+  assert.ok(markdown.includes("Clarity: Not reviewed"));
+  assert.ok(markdown.includes("Draft — not approved"));
+  assert.ok(markdown.includes(positioningFixture));
+  assert.ok(!markdown.includes("## Undecided\n\n- Audience & outcome"));
+});
+
+test("positioning confirmation needs explicit current judgments and never inherits generic approvals", () => {
+  const { isLockReady, isBriefApproved } = require(
+    path.join(lib, "storage.ts"),
+  );
+  const { patchWorkshopSession } = require(path.join(lib, "session.ts"));
+  const source = positioningLib.positioningSource(positioningFixture);
+  let session = {
+    ...createEmptySession(),
+    rawCapture: positioningFixture,
+    lockedAt: "2026-10-20T00:00:00Z",
+    handoffStatus: "ready",
+  };
+  assert.equal(isBriefApproved(session), false);
+  session = {
+    ...session,
+    ...positioningLib.updatePositioningReview(session, (review) => ({
+      ...positioningLib.updateAssessment(
+        review,
+        source.candidates[0].sentence,
+        {
+          ratings: Object.fromEntries(
+            source.criteria.map((c) => [c.id, "meets"]),
+          ),
+        },
+      ),
+      selectedSentence: source.candidates[0].sentence,
+    })),
+  };
+  assert.equal(isLockReady(session.claims, session), true);
+  assert.equal(
+    isLockReady(session.claims, {
+      ...session,
+      concerns: ["Unresolved promise"],
+    }),
+    false,
+  );
+  const changed = patchWorkshopSession(
+    session,
+    positioningLib.updatePositioningReview(session, (review) =>
+      positioningLib.updateAssessment(review, source.candidates[0].sentence, {
+        notes: { clarity: "New evidence" },
+      }),
+    ),
+  );
+  assert.equal(changed.lockedAt, undefined);
+  assert.equal(changed.handoffStatus, "draft");
+  const markdown = briefToMarkdown({
+    ...changed,
+    cornellSummary: "Preserved synthesis",
+  });
+  assert.ok(markdown.includes("Preserved synthesis"));
+});

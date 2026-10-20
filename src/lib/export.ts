@@ -1,4 +1,9 @@
 import {
+  positioningSource,
+  currentPositioningReview,
+  positioningMarkdown,
+} from "./positioning";
+import {
   CLAIM_KIND_LABELS,
   LOCK_GATE_KINDS,
   type WorkshopSession,
@@ -13,7 +18,12 @@ export function briefFilename(session: WorkshopSession) {
   }${isBriefApproved(session) ? "-brief" : "-draft"}.md`;
 }
 export function briefToMarkdown(session: WorkshopSession) {
-  const status = isBriefApproved(session) ? "Approved" : "Draft — not approved";
+  const positioning = positioningSource(session.rawCapture);
+  const status = isBriefApproved(session)
+    ? positioning
+      ? "Confirmed review brief — not official positioning"
+      : "Approved"
+    : "Draft — not approved";
   const pending = LOCK_GATE_KINDS.filter(
     (kind) =>
       !session.claims.some(
@@ -27,7 +37,20 @@ export function briefToMarkdown(session: WorkshopSession) {
         `## ${CLAIM_KIND_LABELS[kind as keyof typeof CLAIM_KIND_LABELS]} · draft wording\n\n${text}`,
     )
     .join("\n\n");
-  return `# ${session.title}\n\nStatus: ${status}\n\n## Undecided\n\n${pending.map((kind) => `- ${CLAIM_KIND_LABELS[kind]}`).join("\n") || "None"}${drafts ? `\n\n${drafts}` : ""}\n\n${session.claims.map((c) => `## ${CLAIM_KIND_LABELS[c.kind]} · ${c.status}\n\n${c.text}`).join("\n\n")}\n\n## Open concerns\n\n${session.concerns.map((c) => `- ${c}`).join("\n") || "None"}\n\n## Carried into handoff\n\n${session.deferredConcerns.map((c) => `- ${c}`).join("\n") || "None"}\n\n## Resolved concerns\n\n${session.resolvedConcerns?.map((c) => `- ${c}`).join("\n") || "None"}${session.cornellCues ? `\n\n## Cornell cues\n\n${session.cornellCues}` : ""}${
+  const generalAnswers = `## Undecided\n\n${pending.map((kind) => `- ${CLAIM_KIND_LABELS[kind]}`).join("\n") || "None"}${drafts ? `\n\n${drafts}` : ""}\n\n${session.claims.map((claim) => `## ${CLAIM_KIND_LABELS[claim.kind]} · ${claim.status}\n\n${claim.text}`).join("\n\n")}`;
+  const earlierReviews = (session.positioningReviews ?? [])
+    .filter((review) => review.source !== session.rawCapture)
+    .map((review) => {
+      const oldSource = positioningSource(review.source);
+      return oldSource
+        ? `\n\n## Earlier source review — superseded\n\n${positioningMarkdown(oldSource, review)}`
+        : `\n\n## Earlier wording — superseded\n\n${review.selectedSentence || review.draftSentence || "No wording chosen"}`;
+    })
+    .join("");
+  const body = positioning
+    ? `${positioningMarkdown(positioning, currentPositioningReview(session))}${session.claims.length || Object.values(session.clarifyDrafts ?? {}).some((text) => text?.trim()) ? `\n\n## Earlier general-workshop answers — not positioning judgments\n\n${generalAnswers}` : ""}`
+    : generalAnswers;
+  return `# ${session.title}\n\nStatus: ${status}\n\n${body}${earlierReviews}\n\n## Open concerns\n\n${session.concerns.map((c) => `- ${c}`).join("\n") || "None"}\n\n## Carried into handoff\n\n${session.deferredConcerns.map((c) => `- ${c}`).join("\n") || "None"}\n\n## Resolved concerns\n\n${session.resolvedConcerns?.map((c) => `- ${c}`).join("\n") || "None"}${session.cornellCues ? `\n\n## Cornell cues\n\n${session.cornellCues}` : ""}${
     Object.keys(session.cornellSectionCues ?? {}).length
       ? `\n\n## Cornell section questions\n\n${Object.entries(
           session.cornellSectionCues ?? {},

@@ -1,3 +1,8 @@
+import {
+  positioningSource,
+  currentPositioningReview,
+  positioningStatus,
+} from "./positioning";
 import { parseWorkshopBackup } from "./backup";
 import type { Claim, ClaimKind, WorkshopSession } from "@/lib/types";
 import { CLAIM_KIND_LABELS, LOCK_GATE_KINDS } from "@/lib/types";
@@ -70,8 +75,26 @@ export function lockGateStatus(claims: Claim[]): {
 export function isLockReady(
   claims: Claim[],
   session?: Pick<WorkshopSession, "concerns"> &
-    Partial<Pick<WorkshopSession, "clarifyDrafts">>,
+    Partial<
+      Pick<
+        WorkshopSession,
+        "clarifyDrafts" | "rawCapture" | "positioningReviews"
+      >
+    >,
 ): boolean {
+  if (typeof session?.rawCapture === "string") {
+    const source = positioningSource(session.rawCapture);
+    if (source)
+      return (
+        positioningStatus(
+          source,
+          currentPositioningReview({
+            rawCapture: session.rawCapture,
+            positioningReviews: session.positioningReviews,
+          }),
+        ).ready && session.concerns.length === 0
+      );
+  }
   const gateOk = lockGateStatus(claims).every((g) => g.met);
   if (!session) return gateOk;
   return (

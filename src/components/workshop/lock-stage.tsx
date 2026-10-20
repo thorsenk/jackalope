@@ -12,6 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { lockGateStatus, isLockReady } from "@/lib/storage";
 import type { WorkshopSession } from "@/lib/types";
+import { positioningSource } from "@/lib/positioning";
+import { PositioningLockStage } from "./positioning-lock-stage";
 import { ConcernsPanel } from "./concerns-panel";
 import { decisionTextForDisplay } from "@/lib/decisions";
 import { HelpTip, IconAction, StageFooter } from "./workshop-controls";
@@ -31,6 +33,19 @@ export function LockStage({
   onEditDecision: (index: number) => void;
   onPreview: () => void;
 }) {
+  const positioning = positioningSource(session.rawCapture);
+  if (positioning)
+    return (
+      <PositioningLockStage
+        session={session}
+        source={positioning}
+        onChange={onChange}
+        onBack={onBack}
+        onLock={onLock}
+        onEditDecision={onEditDecision}
+        onPreview={onPreview}
+      />
+    );
   const gates = lockGateStatus(session.claims);
   const ready = isLockReady(session.claims, session);
   const drafts = Object.values(session.clarifyDrafts ?? {}).filter((text) =>

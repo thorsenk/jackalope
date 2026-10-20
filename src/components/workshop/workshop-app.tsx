@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -14,6 +14,8 @@ import { CaptureStage } from "@/components/workshop/capture-stage";
 import { ClarifyStage } from "@/components/workshop/clarify-stage";
 import { HandoffStage } from "@/components/workshop/handoff-stage";
 import { LockStage } from "@/components/workshop/lock-stage";
+import { PositioningStage } from "./positioning-stage";
+import { positioningSource } from "@/lib/positioning";
 import { StageRail } from "@/components/workshop/stage-rail";
 import {
   buildClarifyFromCapture,
@@ -34,6 +36,10 @@ export function WorkshopApp({
     variant === "cornell" ? "jackalope.workshop.cornell.v1" : undefined;
   const [session, setSession] = useState<WorkshopSession>(() =>
     createEmptySession(),
+  );
+  const positioning = useMemo(
+    () => positioningSource(session.rawCapture),
+    [session.rawCapture],
   );
   const [ready, setReady] = useState(false);
   const [readingSection, setReadingSection] = useState("");
@@ -81,6 +87,14 @@ export function WorkshopApp({
   }
 
   function startClarify(index = session.clarifyIndex) {
+    if (positioning) {
+      patch({
+        stage: "clarify",
+        clarifyIndex: Math.min(index, positioning.criteria.length),
+      });
+      return;
+    }
+
     const hasResponses =
       session.clarifyTurns.some((t) => t.response) ||
       session.claims.length > 0 ||
@@ -196,15 +210,25 @@ export function WorkshopApp({
         />
       )}
 
-      {session.stage === "clarify" && (
-        <ClarifyStage
-          key={session.clarifyIndex}
-          session={session}
-          onChange={patch}
-          onBack={() => go("capture")}
-          onFinish={() => go("lock")}
-        />
-      )}
+      {session.stage === "clarify" &&
+        (positioning ? (
+          <PositioningStage
+            key={session.clarifyIndex}
+            session={session}
+            source={positioning}
+            onChange={patch}
+            onBack={() => go("capture")}
+            onFinish={() => go("lock")}
+          />
+        ) : (
+          <ClarifyStage
+            key={session.clarifyIndex}
+            session={session}
+            onChange={patch}
+            onBack={() => go("capture")}
+            onFinish={() => go("lock")}
+          />
+        ))}
 
       {session.stage === "lock" && (
         <LockStage

@@ -37,6 +37,8 @@ import {
 } from "@/lib/export";
 import { isBriefApproved } from "@/lib/storage";
 import { decisionTextForDisplay } from "@/lib/decisions";
+import { positioningSource } from "@/lib/positioning";
+import { PositioningSummary } from "./positioning-summary";
 import { SourceReference } from "./source-reference";
 
 export function HandoffStage({
@@ -51,6 +53,7 @@ export function HandoffStage({
   onReset: () => void;
 }) {
   const [copyState, setCopyState] = useState<"idle" | "ok" | "fail">("idle");
+  const positioning = positioningSource(session.rawCapture);
   const markdown = briefToMarkdown(session);
   const [copiedMarkdown, setCopiedMarkdown] = useState("");
   const copied = copyState === "ok" && copiedMarkdown === markdown;
@@ -80,7 +83,9 @@ export function HandoffStage({
           <h2>{approved ? "Your brief is ready." : "Draft preview"}</h2>
           <p className="muted-text">
             {approved
-              ? "Download or copy your approved brief."
+              ? positioning
+                ? "Your review record. Final positioning still needs your decision."
+                : "Download or copy your approved brief."
               : "Not approved. Includes open questions and draft wording."}
           </p>
         </div>
@@ -90,7 +95,7 @@ export function HandoffStage({
           ) : (
             <Pencil data-icon="inline-start" />
           )}
-          {approved ? "Approved" : "Draft"}
+          {approved ? (positioning ? "Confirmed review" : "Approved") : "Draft"}
         </Badge>
       </header>
       <div className="export-toolbar">
@@ -172,47 +177,55 @@ export function HandoffStage({
             </time>
           )}
         </div>
-        {pending.length > 0 && (
-          <section className="pending-decisions">
-            <h3>Undecided · {pending.length}</h3>
-            <p>{pending.map((kind) => CLAIM_KIND_LABELS[kind]).join(" · ")}</p>
-          </section>
+        {positioning ? (
+          <PositioningSummary session={session} source={positioning} />
+        ) : (
+          <>
+            {pending.length > 0 && (
+              <section className="pending-decisions">
+                <h3>Undecided · {pending.length}</h3>
+                <p>
+                  {pending.map((kind) => CLAIM_KIND_LABELS[kind]).join(" · ")}
+                </p>
+              </section>
+            )}
+            {LOCK_GATE_KINDS.filter((kind) =>
+              session.clarifyDrafts?.[kind]?.trim(),
+            ).map((kind) => (
+              <section key={`draft-${kind}`}>
+                <div className="brief-section-heading">
+                  <h3>{CLAIM_KIND_LABELS[kind]}</h3>
+                  <Badge variant="outline">Draft wording</Badge>
+                </div>
+                <div className="markdown-content">
+                  <Markdown>{session.clarifyDrafts?.[kind]}</Markdown>
+                </div>
+              </section>
+            ))}
+            {session.claims
+              .filter(
+                (claim) =>
+                  claim.status === "accepted" || claim.status === "proposed",
+              )
+              .map((claim) => (
+                <section key={claim.id}>
+                  <div className="brief-section-heading">
+                    <h3>{CLAIM_KIND_LABELS[claim.kind]}</h3>
+                    {claim.status === "accepted" ? (
+                      <Check aria-label="Accepted" />
+                    ) : (
+                      <Badge variant="outline">Proposed</Badge>
+                    )}
+                  </div>
+                  <div className="markdown-content">
+                    <Markdown>
+                      {decisionTextForDisplay(claim.text, claim.kind)}
+                    </Markdown>
+                  </div>
+                </section>
+              ))}
+          </>
         )}
-        {LOCK_GATE_KINDS.filter((kind) =>
-          session.clarifyDrafts?.[kind]?.trim(),
-        ).map((kind) => (
-          <section key={`draft-${kind}`}>
-            <div className="brief-section-heading">
-              <h3>{CLAIM_KIND_LABELS[kind]}</h3>
-              <Badge variant="outline">Draft wording</Badge>
-            </div>
-            <div className="markdown-content">
-              <Markdown>{session.clarifyDrafts?.[kind]}</Markdown>
-            </div>
-          </section>
-        ))}
-        {session.claims
-          .filter(
-            (claim) =>
-              claim.status === "accepted" || claim.status === "proposed",
-          )
-          .map((claim) => (
-            <section key={claim.id}>
-              <div className="brief-section-heading">
-                <h3>{CLAIM_KIND_LABELS[claim.kind]}</h3>
-                {claim.status === "accepted" ? (
-                  <Check aria-label="Accepted" />
-                ) : (
-                  <Badge variant="outline">Proposed</Badge>
-                )}
-              </div>
-              <div className="markdown-content">
-                <Markdown>
-                  {decisionTextForDisplay(claim.text, claim.kind)}
-                </Markdown>
-              </div>
-            </section>
-          ))}
         {[
           { title: "Open concerns", values: session.concerns },
           { title: "Carried forward", values: session.deferredConcerns },
