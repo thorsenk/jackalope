@@ -346,10 +346,46 @@ test("numbered source candidates become distinct unapproved choices with origina
 test("candidate quotations preserve wrapped lines, paragraphs, and boundaries", () => {
   const source =
     "## C1 · Private\n> We help gardeners grow food\n> without collecting their personal data.\n>\n> Only with their permission.\n\nCommentary outside the quote.\n\n## C2 · Local\n> We help growers\nplan their planting.\n\nOutside commentary.";
-  const options = buildClarifyFromCapture(source, "Positioning review")[0].options;
+  const options = buildClarifyFromCapture(source, "Positioning review")[0]
+    .options;
   assert.equal(
     options[0].claimText,
     "We help gardeners grow food\nwithout collecting their personal data.\n\nOnly with their permission.",
   );
   assert.equal(options[1].claimText, "We help growers\nplan their planting.");
+});
+
+test("only explicit labels become proposals and full section constraints survive", () => {
+  const raw =
+    "## C1 · Candidate\n> Tools for growers.\n\nVisual craft is a risk, not a decided direction.\n\n## C2 · Candidate\n> Planning for growers.\n\n## Constraints\nMust satisfy all of these:\n\n- Never sell personal data.\n- Ask before sharing.\n\n## Historical tasks\nUpdate vocabulary files after a decision.";
+  const turns = buildClarifyFromCapture(raw, "Positioning review");
+  assert.equal(turns[1].options.length, 0);
+  assert.equal(
+    turns[2].options[0].claimText,
+    "Must satisfy all of these:\n\n- Never sell personal data.\n- Ask before sharing.",
+  );
+  assert.equal(turns[4].options.length, 0);
+  assert.equal(
+    buildClarifyFromCapture(
+      "Audience: Gardeners.\n\nConstraints: Keep data private.",
+      "Notes",
+    )[2].options[0].claimText,
+    "Constraints: Keep data private.",
+  );
+});
+
+test("draft exports remain explicitly unapproved and retain pending work and source", () => {
+  const session = {
+    ...createEmptySession(),
+    rawCapture: "Entire source",
+    handoffStatus: "exported",
+    clarifyDrafts: { taste_bar: "Warm but undecided" },
+  };
+  const text = briefToMarkdown(session);
+  assert.ok(text.includes("Status: Draft — not approved"));
+  assert.ok(text.includes("## Undecided\n\n- Audience & outcome"));
+  assert.ok(text.includes("Look & feel · draft wording\n\nWarm but undecided"));
+  assert.ok(text.endsWith("Entire source\n"));
+  assert.equal(session.lockedAt, undefined);
+  assert.equal(session.claims.length, 0);
 });

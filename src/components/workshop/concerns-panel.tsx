@@ -322,7 +322,7 @@ export function ConcernsPanel({
             </details>
           ),
       )}
-      {!review && suggestions.length > 0 && (
+      {!review && session.concerns.length === 0 && suggestions.length > 0 && (
         <details className="concern-history">
           <summary>
             <Plus aria-hidden="true" />

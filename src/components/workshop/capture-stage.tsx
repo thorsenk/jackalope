@@ -36,7 +36,8 @@ import { moveConcern } from "@/lib/concerns";
 import { captureWordCount, documentSections } from "@/lib/document-sections";
 import { cn } from "@/lib/utils";
 import { ConcernsPanel } from "./concerns-panel";
-import { HelpTip, IconAction, StageFooter } from "./workshop-controls";
+import { OutlineMenu } from "./outline-menu";
+import { IconAction, StageFooter } from "./workshop-controls";
 
 export function CaptureStage({
   session,
@@ -44,6 +45,8 @@ export function CaptureStage({
   onContinue,
   onLoadSample,
   onRestore,
+  activeSectionId,
+  onSectionChange,
   variant = "standard",
 }: {
   session: WorkshopSession;
@@ -52,8 +55,9 @@ export function CaptureStage({
   onLoadSample: () => void;
   onRestore: (session: WorkshopSession) => void;
   variant?: "standard" | "cornell";
+  activeSectionId: string;
+  onSectionChange: (id: string) => void;
 }) {
-  const [activeSection, setActiveSection] = useState(0);
   const [readAll, setReadAll] = useState(false);
   const [editing, setEditing] = useState(!session.rawCapture.trim());
   const [selection, setSelection] = useState("");
@@ -67,9 +71,9 @@ export function CaptureStage({
   const words = captureWordCount(session.rawCapture);
   const cornell = variant === "cornell";
   const showOutline = cornell || (!editing && sections.length > 1);
-  const sectionIndex = Math.min(
-    activeSection,
-    Math.max(0, sections.length - 1),
+  const sectionIndex = Math.max(
+    0,
+    sections.findIndex((section) => section.id === activeSectionId),
   );
   const current = sections[sectionIndex];
   const reviewed = session.reviewedSections ?? [];
@@ -78,7 +82,7 @@ export function CaptureStage({
   );
 
   function chooseSection(index: number) {
-    setActiveSection(index);
+    onSectionChange(sections[index]?.id ?? "");
     setReadAll(false);
   }
   function markReviewed() {
@@ -86,7 +90,7 @@ export function CaptureStage({
     onChange({
       reviewedSections: Array.from(new Set([...reviewed, current.id])),
     });
-    if (sectionIndex < sections.length - 1) setActiveSection(sectionIndex + 1);
+    if (sectionIndex < sections.length - 1) chooseSection(sectionIndex + 1);
   }
   async function importCapture(file?: File) {
     if (!file) return;
@@ -102,7 +106,7 @@ export function CaptureStage({
         return;
       onRestore(imported);
       setEditing(false);
-      setActiveSection(0);
+      onSectionChange("");
       setNotice("Workshop restored.");
     } catch {
       setNotice("Import failed. Choose a workshop JSON backup.");
@@ -154,6 +158,12 @@ export function CaptureStage({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuGroup>
+              {!editing && current && (
+                <DropdownMenuItem onClick={() => setReadAll(!readAll)}>
+                  <AlignLeft />
+                  {readAll ? "Read one section" : "Read all sections"}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => downloadBackup(session)}>
                 <Download />
                 Download backup
@@ -171,10 +181,6 @@ export function CaptureStage({
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
-        <HelpTip label="About source notes">
-          Read or edit your notes. Section checkmarks track reading, not
-          approval. Download a backup from the menu.
-        </HelpTip>
       </div>
       <input
         ref={fileInput}
@@ -206,6 +212,15 @@ export function CaptureStage({
               <List aria-hidden="true" />
               Outline
             </h2>
+            <OutlineMenu
+              label="Choose section"
+              items={sections.map((section) => ({
+                ...section,
+                complete: reviewed.includes(section.id),
+              }))}
+              index={sectionIndex}
+              onSelect={chooseSection}
+            />
             <nav>
               {sections.map((section, index) => (
                 <Button
@@ -301,18 +316,6 @@ export function CaptureStage({
               </span>
             </h2>
             {toolbar}
-            <div className="reading-actions">
-              {!editing && current && (
-                <>
-                  <IconAction
-                    label={readAll ? "Read one section" : "Read all sections"}
-                    icon={AlignLeft}
-                    aria-pressed={readAll}
-                    onClick={() => setReadAll(!readAll)}
-                  />
-                </>
-              )}
-            </div>
           </div>
           {editing ? (
             <div className="editor-body">
@@ -361,7 +364,7 @@ export function CaptureStage({
             </div>
           ) : current ? (
             <>
-              <div className="document-reading">
+              <div className="document-reading markdown-content">
                 {(readAll ? sections : [current]).map((section) => (
                   <article id={section.id} key={section.id}>
                     {readAll && <h3>{section.title}</h3>}
@@ -372,7 +375,8 @@ export function CaptureStage({
               {!readAll && (
                 <div className="section-pagination">
                   <span>
-                    {sectionIndex + 1} / {sections.length}
+                    {sectionIndex + 1} / {sections.length} ·{" "}
+                    {words.toLocaleString()} words
                   </span>
                   <div className="inline-actions">
                     <IconAction
@@ -410,7 +414,7 @@ export function CaptureStage({
               </Button>
             </div>
           )}
-          {words > 0 && (
+          {words > 0 && (editing || readAll) && (
             <div className="document-meta">
               <span>
                 {words.toLocaleString()} {words === 1 ? "word" : "words"}

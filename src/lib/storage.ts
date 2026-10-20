@@ -78,3 +78,8 @@ export function isLockReady(
 export function claimsForKind(claims: Claim[], kind: ClaimKind): Claim[] {
   return claims.filter((c) => c.kind === kind);
 }
+
+/** Export status is derived from approval evidence, never just a stored label. */
+export function isBriefApproved(session: WorkshopSession): boolean {
+  return Boolean(session.lockedAt) && isLockReady(session.claims, session);
+}

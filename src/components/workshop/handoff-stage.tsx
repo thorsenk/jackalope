@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Markdown from "react-markdown";
 import {
   ArrowLeft,
   Check,
@@ -22,7 +23,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CLAIM_KIND_LABELS, type WorkshopSession } from "@/lib/types";
+import {
+  CLAIM_KIND_LABELS,
+  LOCK_GATE_KINDS,
+  type WorkshopSession,
+} from "@/lib/types";
 import {
   briefFilename,
   briefToMarkdown,
@@ -30,10 +35,10 @@ import {
   downloadMarkdown,
   downloadBackup,
 } from "@/lib/export";
-import { isLockReady } from "@/lib/storage";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { isBriefApproved } from "@/lib/storage";
 import { decisionTextForDisplay } from "@/lib/decisions";
 import { HelpTip } from "./workshop-controls";
+import { SourceReference } from "./source-reference";
 
 export function HandoffStage({
   session,
@@ -48,25 +53,36 @@ export function HandoffStage({
 }) {
   const [copyState, setCopyState] = useState<"idle" | "ok" | "fail">("idle");
   const markdown = briefToMarkdown(session);
+  const [copiedMarkdown, setCopiedMarkdown] = useState("");
+  const copied = copyState === "ok" && copiedMarkdown === markdown;
   const history = session.claims.filter(
     (claim) => claim.status === "rejected" || claim.status === "reframed",
   );
-  const approved =
-    Boolean(session.lockedAt) && isLockReady(session.claims, session);
+  const approved = isBriefApproved(session);
+  const pending = LOCK_GATE_KINDS.filter(
+    (kind) =>
+      !session.claims.some(
+        (claim) => claim.kind === kind && claim.status === "accepted",
+      ),
+  );
   async function copy() {
-    if (!approved) return;
     const success = await copyText(markdown);
     setCopyState(success ? "ok" : "fail");
-    if (success) onChange({ handoffStatus: "exported" });
+    if (success) {
+      setCopiedMarkdown(markdown);
+      if (approved) onChange({ handoffStatus: "exported" });
+    }
   }
   return (
     <div className="export-workspace">
       <header className="section-heading">
         <div>
           <p className="eyebrow">Export</p>
-          <h2>{approved ? "Your brief is ready." : "Review your changes."}</h2>
+          <h2>{approved ? "Your brief is ready." : "Draft preview"}</h2>
           <p className="muted-text">
-            Download a copy, or copy it into your next conversation.
+            {approved
+              ? "Download or copy your approved brief."
+              : "Not approved. Undecided questions and draft wording stay visible in the download."}
           </p>
         </div>
         <Badge variant="secondary">
@@ -78,40 +94,27 @@ export function HandoffStage({
           {approved ? "Approved" : "Draft"}
         </Badge>
       </header>
-      {!approved && (
-        <Alert>
-          <AlertDescription>
-            This brief has changed. Return to Review and approve it again.
-          </AlertDescription>
-        </Alert>
-      )}
       <div className="export-toolbar">
         <div className="inline-actions">
           <Button
-            disabled={!approved}
             onClick={() => {
-              if (!approved) return;
               downloadMarkdown(briefFilename(session), markdown);
-              onChange({ handoffStatus: "exported" });
+              if (approved) onChange({ handoffStatus: "exported" });
             }}
           >
             <FileDown data-icon="inline-start" />
-            Download brief
+            {approved ? "Download brief" : "Download draft"}
           </Button>
-          <Button
-            variant="outline"
-            disabled={!approved}
-            onClick={() => void copy()}
-          >
-            {copyState === "ok" ? (
+          <Button variant="outline" onClick={() => void copy()}>
+            {copied ? (
               <Check data-icon="inline-start" />
             ) : (
               <Copy data-icon="inline-start" />
             )}
-            {copyState === "ok" ? "Copied" : "Copy"}
+            {copied ? "Copied" : approved ? "Copy" : "Copy draft"}
           </Button>
           <span className="sr-only" role="status">
-            {copyState === "ok"
+            {copied
               ? "Brief copied."
               : copyState === "fail"
                 ? "Copy failed. Download the brief instead."
@@ -160,7 +163,7 @@ export function HandoffStage({
         </div>
       </div>
       {copyState === "fail" && (
-        <p role="alert">Copy failed. Use Download brief instead.</p>
+        <p role="alert">Copy failed. Download a copy instead.</p>
       )}
       <article className="brief-document">
         <div className="brief-heading">
@@ -172,6 +175,25 @@ export function HandoffStage({
             </time>
           )}
         </div>
+        {pending.length > 0 && (
+          <section className="pending-decisions">
+            <h3>Undecided · {pending.length}</h3>
+            <p>{pending.map((kind) => CLAIM_KIND_LABELS[kind]).join(" · ")}</p>
+          </section>
+        )}
+        {LOCK_GATE_KINDS.filter((kind) =>
+          session.clarifyDrafts?.[kind]?.trim(),
+        ).map((kind) => (
+          <section key={`draft-${kind}`}>
+            <div className="brief-section-heading">
+              <h3>{CLAIM_KIND_LABELS[kind]}</h3>
+              <Badge variant="outline">Draft wording</Badge>
+            </div>
+            <div className="markdown-content">
+              <Markdown>{session.clarifyDrafts?.[kind]}</Markdown>
+            </div>
+          </section>
+        ))}
         {session.claims
           .filter(
             (claim) =>
@@ -187,7 +209,11 @@ export function HandoffStage({
                   <Badge variant="outline">Proposed</Badge>
                 )}
               </div>
-              <p>{decisionTextForDisplay(claim.text, claim.kind)}</p>
+              <div className="markdown-content">
+                <Markdown>
+                  {decisionTextForDisplay(claim.text, claim.kind)}
+                </Markdown>
+              </div>
             </section>
           ))}
         {[
@@ -221,13 +247,7 @@ export function HandoffStage({
             </div>
           </details>
         )}
-        <details className="source-reference">
-          <summary>
-            <FileText aria-hidden="true" />
-            Original notes
-          </summary>
-          <div>{session.rawCapture}</div>
-        </details>
+        <SourceReference source={session.rawCapture} label="Original notes" />
         {(session.cornellSummary ||
           session.cornellCues ||
           Object.keys(session.cornellSectionCues ?? {}).length > 0) && (

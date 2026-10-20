@@ -1,14 +1,33 @@
-import { CLAIM_KIND_LABELS, type WorkshopSession } from "./types";
+import {
+  CLAIM_KIND_LABELS,
+  LOCK_GATE_KINDS,
+  type WorkshopSession,
+} from "./types";
+import { isBriefApproved } from "./storage";
 export function briefFilename(session: WorkshopSession) {
   return `${
     session.title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "") || "workshop"
-  }-brief.md`;
+  }${isBriefApproved(session) ? "-brief" : "-draft"}.md`;
 }
 export function briefToMarkdown(session: WorkshopSession) {
-  return `# ${session.title}\n\nStatus: ${session.handoffStatus}\n\n${session.claims.map((c) => `## ${CLAIM_KIND_LABELS[c.kind]} · ${c.status}\n\n${c.text}`).join("\n\n")}\n\n## Open concerns\n\n${session.concerns.map((c) => `- ${c}`).join("\n") || "None"}\n\n## Carried into handoff\n\n${session.deferredConcerns.map((c) => `- ${c}`).join("\n") || "None"}\n\n## Resolved concerns\n\n${session.resolvedConcerns?.map((c) => `- ${c}`).join("\n") || "None"}${session.cornellCues ? `\n\n## Cornell cues\n\n${session.cornellCues}` : ""}${
+  const status = isBriefApproved(session) ? "Approved" : "Draft — not approved";
+  const pending = LOCK_GATE_KINDS.filter(
+    (kind) =>
+      !session.claims.some(
+        (claim) => claim.kind === kind && claim.status === "accepted",
+      ),
+  );
+  const drafts = Object.entries(session.clarifyDrafts ?? {})
+    .filter(([, text]) => text?.trim())
+    .map(
+      ([kind, text]) =>
+        `## ${CLAIM_KIND_LABELS[kind as keyof typeof CLAIM_KIND_LABELS]} · draft wording\n\n${text}`,
+    )
+    .join("\n\n");
+  return `# ${session.title}\n\nStatus: ${status}\n\n## Undecided\n\n${pending.map((kind) => `- ${CLAIM_KIND_LABELS[kind]}`).join("\n") || "None"}${drafts ? `\n\n${drafts}` : ""}\n\n${session.claims.map((c) => `## ${CLAIM_KIND_LABELS[c.kind]} · ${c.status}\n\n${c.text}`).join("\n\n")}\n\n## Open concerns\n\n${session.concerns.map((c) => `- ${c}`).join("\n") || "None"}\n\n## Carried into handoff\n\n${session.deferredConcerns.map((c) => `- ${c}`).join("\n") || "None"}\n\n## Resolved concerns\n\n${session.resolvedConcerns?.map((c) => `- ${c}`).join("\n") || "None"}${session.cornellCues ? `\n\n## Cornell cues\n\n${session.cornellCues}` : ""}${
     Object.keys(session.cornellSectionCues ?? {}).length
       ? `\n\n## Cornell section questions\n\n${Object.entries(
           session.cornellSectionCues ?? {},

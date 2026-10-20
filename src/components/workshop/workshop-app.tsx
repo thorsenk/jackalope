@@ -35,6 +35,7 @@ export function WorkshopApp({
     createEmptySession(),
   );
   const [ready, setReady] = useState(false);
+  const [readingSection, setReadingSection] = useState("");
   const [saved, setSaved] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
 
@@ -93,7 +94,7 @@ export function WorkshopApp({
     patch({ stage });
   }
 
-  function startClarify() {
+  function startClarify(index = session.clarifyIndex) {
     const hasResponses =
       session.clarifyTurns.some((t) => t.response) ||
       session.claims.length > 0 ||
@@ -104,7 +105,7 @@ export function WorkshopApp({
     patch({
       stage: "clarify",
       clarifyTurns: turns,
-      clarifyIndex: hasResponses ? session.clarifyIndex : 0,
+      clarifyIndex: Math.min(index, Math.max(0, turns.length - 1)),
       claims: hasResponses ? session.claims : [],
     });
   }
@@ -118,15 +119,9 @@ export function WorkshopApp({
     setSession(createEmptySession());
   }
 
-  const currentIdx = STAGE_ORDER.indexOf(session.stage);
-  const availableIdx = session.lockedAt
-    ? 3
-    : session.claims.length
-      ? 2
-      : session.clarifyTurns.length
-        ? 1
-        : 0;
-  const maxStageIdx = Math.max(currentIdx, availableIdx);
+  // Draft review and export are useful before any decisions are accepted.
+  const maxStageIdx =
+    session.rawCapture.trim() || session.claims.length ? 3 : 0;
   const allowUpTo = STAGE_ORDER[maxStageIdx];
 
   if (!ready)
@@ -194,7 +189,7 @@ export function WorkshopApp({
         allowUpTo={allowUpTo}
         onSelect={(s) => {
           if (STAGE_ORDER.indexOf(s) > maxStageIdx) return;
-          if (s === "clarify" && session.stage === "capture") startClarify();
+          if (s === "clarify") startClarify();
           else go(s);
         }}
       />
@@ -204,7 +199,9 @@ export function WorkshopApp({
           variant={variant}
           session={session}
           onChange={patch}
-          onContinue={startClarify}
+          onContinue={() => startClarify()}
+          activeSectionId={readingSection}
+          onSectionChange={setReadingSection}
           onLoadSample={loadSample}
           onRestore={(restored) => {
             setSaved(false);
@@ -215,6 +212,7 @@ export function WorkshopApp({
 
       {session.stage === "clarify" && (
         <ClarifyStage
+          key={session.clarifyIndex}
           session={session}
           onChange={patch}
           onBack={() => go("capture")}
@@ -226,7 +224,9 @@ export function WorkshopApp({
         <LockStage
           session={session}
           onChange={patch}
-          onBack={() => go("clarify")}
+          onBack={() => startClarify()}
+          onEditDecision={(index) => startClarify(index)}
+          onPreview={() => go("handoff")}
           onLock={() =>
             patch({
               stage: "handoff",

@@ -269,10 +269,12 @@ export function buildClarifyFromCapture(
   title: string,
 ): ClarifyTurn[] {
   if (title === SAMPLE_TITLE) return buildSampleClarifyTurns();
-  const paragraphs = raw
-    .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter(Boolean);
+  const sections = documentSections(raw);
+  const paragraphs = fromMarkdown(raw)
+    .children.filter((node) => node.type === "paragraph")
+    .map((node) =>
+      raw.slice(node.position?.start.offset, node.position?.end.offset),
+    );
   const candidateOptions = documentSections(raw)
     .filter((section) => /^C\d+\b/.test(section.title))
     .flatMap((section) => {
@@ -303,32 +305,36 @@ export function buildClarifyFromCapture(
     {
       kind: "who_outcome",
       prompt: "Who is this for, and what outcome matters?",
-      match: /household|audience|users|people|outcome/i,
+      match:
+        /^(?:audience|outcome|audience (?:&|and) outcome|who \/ outcome)$/i,
     },
     {
       kind: "taste_bar",
       prompt: "What should the experience look and feel like?",
-      match: /visual|typography|feel|taste|craft/i,
+      match:
+        /^(?:look (?:&|and) feel|taste|taste bar|visual direction|brand voice)$/i,
     },
     {
       kind: "hard_constraint",
-      prompt: "What must the build respect?",
-      match: /must|privacy|constraint|permission/i,
+      prompt: "What must this work respect?",
+      match: /^(?:constraints?|hard constraints?|requirements?)$/i,
     },
     {
       kind: "non_goal",
       prompt: "Are there genuine exclusions or boundaries to record?",
-      match: /non-goal|exclusion|not building/i,
+      match: /^(?:non-goals?|exclusions?|out of scope|boundaries)$/i,
     },
     {
       kind: "shared_term",
       prompt: "Which terms need a shared meaning?",
-      match: /vocabulary|definition|brick|means/i,
+      match:
+        /^(?:language|shared terms?|terminology|vocabulary|definitions?)$/i,
     },
     {
       kind: "authorization",
       prompt: "What can the team do independently, and what needs review?",
-      match: /authoriz|explicit.*action|review.*action/i,
+      match:
+        /^(?:permissions?|authorizations?|authorisations?|authorize without me)$/i,
     },
   ] as const;
   return definitions.map(({ kind, prompt, match }) => {
@@ -341,7 +347,14 @@ export function buildClarifyFromCapture(
         options: candidateOptions,
       };
     }
-    const excerpt = paragraphs.find((p) => match.test(p));
+    // Only explicitly labeled source is offered as an answer. Incidental words
+    // in commentary or historical instructions remain reference material.
+    const section = sections.find((item) => match.test(item.title));
+    const paragraph = paragraphs.find((text) => {
+      const label = text.match(/^([^:\n]+):[ \t]+\S/);
+      return label ? match.test(label[1].trim()) : false;
+    });
+    const excerpt = section?.body ?? paragraph;
     return {
       id: uid("q"),
       prompt,
@@ -350,7 +363,7 @@ export function buildClarifyFromCapture(
         ? [
             {
               id: "capture-excerpt",
-              label: "Start from your captured wording",
+              label: section?.title ?? "From your notes",
               claimKind: kind,
               claimText: excerpt,
             },

@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   ArrowLeft,
   Check,
-  FileText,
   Pencil,
   X,
   ChevronLeft,
@@ -25,6 +24,8 @@ import {
   decisionTextForDisplay,
   type DecisionClaim,
 } from "@/lib/decisions";
+import { OutlineMenu } from "./outline-menu";
+import { SourceReference } from "./source-reference";
 import { HelpTip, IconAction } from "./workshop-controls";
 
 export function ClarifyStage({
@@ -44,8 +45,12 @@ export function ClarifyStage({
   );
   const turn = session.clarifyTurns[index];
   const kind = LOCK_GATE_KINDS[index] ?? "who_outcome";
-  const [selected, setSelected] = useState("");
-  const [reframing, setReframing] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [reframing, setReframing] = useState(() =>
+    Boolean(
+      session.clarifyDrafts?.[kind] || turn?.response?.type === "reframe",
+    ),
+  );
   const draft =
     session.clarifyDrafts?.[kind] ??
     session.claims.find(
@@ -53,10 +58,8 @@ export function ClarifyStage({
     )?.text ??
     "";
   const selectedId =
-    selected ||
-    (turn?.options.length === 1
-      ? turn.options[0].id
-      : (turn?.response?.optionId ?? ""));
+    selected ??
+    (turn?.response?.type === "accept" ? (turn.response.optionId ?? "") : "");
   const option = turn?.options.find((item) => item.id === selectedId);
   const writing = reframing || !turn?.options.length;
   const text = writing ? draft.trim() : option?.claimText;
@@ -70,7 +73,7 @@ export function ClarifyStage({
 
   function move(next: number) {
     onChange({ clarifyIndex: next });
-    setSelected("");
+    setSelected(null);
     setReframing(false);
   }
   function respond(type: ClarifyResponse["type"]) {
@@ -99,13 +102,26 @@ export function ClarifyStage({
     });
     if (type !== "reject") {
       if (index === session.clarifyTurns.length - 1) onFinish();
-      setSelected("");
+      setSelected(null);
       setReframing(false);
     }
   }
 
   return (
     <div className="decision-workspace">
+      <OutlineMenu
+        label="Choose decision"
+        completeLabel="Accepted"
+        items={LOCK_GATE_KINDS.map((item) => ({
+          id: item,
+          title: CLAIM_KIND_LABELS[item],
+          complete: session.claims.some(
+            (claim) => claim.kind === item && claim.status === "accepted",
+          ),
+        }))}
+        index={index}
+        onSelect={move}
+      />
       <aside className="decision-outline" aria-label="Decisions">
         <h2 className="eyebrow">Decisions</h2>
         {LOCK_GATE_KINDS.map((item, itemIndex) => {
@@ -141,16 +157,22 @@ export function ClarifyStage({
             <h2>{turn.prompt}</h2>
           </div>
           <HelpTip label="About decision proposals">
-            Proposals come from your notes. Accept, edit, or reject them;
-            nothing is approved automatically.
+            Only explicitly labeled source is offered as a proposal. Read the
+            source for context, write a draft, or leave a question undecided.
+            Selecting a proposal does not accept it.
           </HelpTip>
         </header>
+        {!turn.options.length && (
+          <p className="decision-hint">
+            No proposal for this question. Use the source notes or leave it
+            undecided.
+          </p>
+        )}
         {writing ? (
           <Field>
-            <FieldLabel htmlFor="decision">Your wording</FieldLabel>
+            <FieldLabel htmlFor="decision">Your draft</FieldLabel>
             <Textarea
               id="decision"
-              autoFocus
               value={draft}
               onChange={(event) =>
                 onChange({
@@ -161,11 +183,12 @@ export function ClarifyStage({
                 })
               }
               placeholder="What should the brief say?"
-              rows={7}
+              rows={4}
             />
           </Field>
         ) : (
           <ToggleGroup
+            orientation="vertical"
             className="proposal-list"
             aria-label="Decision proposals"
             value={selectedId ? [selectedId] : []}
@@ -178,7 +201,7 @@ export function ClarifyStage({
                 value={item.id}
               >
                 <span className="proposal-label" title={item.label}>
-                  {turn.options.length > 1 ? item.label : "From your notes"}
+                  {item.label}
                 </span>
                 <span className="proposal-text">
                   {decisionTextForDisplay(item.claimText, item.claimKind)}
@@ -194,7 +217,7 @@ export function ClarifyStage({
             onClick={() => respond(writing ? "reframe" : "accept")}
           >
             <Check data-icon="inline-start" />
-            Accept
+            {writing ? "Accept wording" : "Accept"}
             <ChevronRight data-icon="inline-end" />
           </Button>
           {!writing && (
@@ -212,35 +235,47 @@ export function ClarifyStage({
               }}
             >
               <Pencil data-icon="inline-start" />
-              Edit
+              {option ? "Edit" : "Write own"}
             </Button>
           )}
-          {reframing && (
+          {reframing && turn.options.length > 0 && (
             <Button variant="ghost" onClick={() => setReframing(false)}>
               Cancel
             </Button>
           )}
+          {!writing && option && (
+            <Button variant="ghost" onClick={() => respond("reject")}>
+              <X data-icon="inline-start" />
+              Reject
+            </Button>
+          )}
           <Button
             variant="ghost"
-            disabled={!text}
-            onClick={() => respond("reject")}
+            onClick={() =>
+              index < session.clarifyTurns.length - 1
+                ? move(index + 1)
+                : onFinish()
+            }
           >
-            <X data-icon="inline-start" />
-            Reject
+            {session.claims.some(
+              (claim) => claim.kind === kind && claim.status === "accepted",
+            )
+              ? "Next"
+              : "Leave undecided"}
+            <ChevronRight data-icon="inline-end" />
           </Button>
         </div>
+        {writing && draft.trim() && (
+          <p role="status" className="inline-feedback">
+            Draft saved. It remains unaccepted until you choose Accept wording.
+          </p>
+        )}
         {turn.response?.type === "reject" && (
           <p role="status" className="inline-feedback">
             Rejected. Edit the wording or choose another proposal.
           </p>
         )}
-        <details className="source-reference">
-          <summary>
-            <FileText aria-hidden="true" />
-            Source notes
-          </summary>
-          <div>{session.rawCapture}</div>
-        </details>
+        <SourceReference source={session.rawCapture} />
         <div className="decision-navigation">
           <Button variant="ghost" onClick={onBack}>
             <ArrowLeft data-icon="inline-start" />

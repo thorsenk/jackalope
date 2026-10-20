@@ -5,6 +5,8 @@ import {
   Check,
   CheckCircle2,
   Circle,
+  ChevronRight,
+  FileText,
   ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,18 +14,22 @@ import { lockGateStatus, isLockReady } from "@/lib/storage";
 import type { WorkshopSession } from "@/lib/types";
 import { ConcernsPanel } from "./concerns-panel";
 import { decisionTextForDisplay } from "@/lib/decisions";
-import { HelpTip, StageFooter } from "./workshop-controls";
+import { HelpTip, IconAction, StageFooter } from "./workshop-controls";
 
 export function LockStage({
   session,
   onChange,
   onBack,
   onLock,
+  onEditDecision,
+  onPreview,
 }: {
   session: WorkshopSession;
   onChange: (patch: Partial<WorkshopSession>) => void;
   onBack: () => void;
   onLock: () => void;
+  onEditDecision: (index: number) => void;
+  onPreview: () => void;
 }) {
   const gates = lockGateStatus(session.claims);
   const ready = isLockReady(session.claims, session);
@@ -36,8 +42,8 @@ export function LockStage({
           <h2>Check the brief.</h2>
         </div>
         <HelpTip label="About approval">
-          Approval records this brief, not company policy. It does not send or
-          publish anything. Changes require another review.
+          Approval records your explicit decisions in this brief. It does not
+          send or publish anything. Changes require another review.
         </HelpTip>
       </header>
       <div className="review-grid">
@@ -51,7 +57,7 @@ export function LockStage({
               {accepted} / {gates.length}
             </span>
           </div>
-          {gates.map((gate) => (
+          {gates.map((gate, index) => (
             <article className="review-decision" key={gate.kind}>
               <div className={gate.met ? "gate-icon accepted" : "gate-icon"}>
                 {gate.met ? (
@@ -60,18 +66,36 @@ export function LockStage({
                   <Circle aria-label="Missing decision" />
                 )}
               </div>
-              <div>
+              <div className="review-decision-content">
                 <h3>{gate.label}</h3>
-                <p>
-                  {gate.claim
-                    ? decisionTextForDisplay(gate.claim.text, gate.kind)
-                    : "Needs a decision."}
-                </p>
+                {gate.claim ? (
+                  <p>{decisionTextForDisplay(gate.claim.text, gate.kind)}</p>
+                ) : (
+                  <span className="muted-text">
+                    {session.clarifyDrafts?.[gate.kind]?.trim()
+                      ? "Draft saved · not accepted"
+                      : "Undecided"}
+                  </span>
+                )}
               </div>
+              <IconAction
+                label={`Edit ${gate.label}`}
+                icon={ChevronRight}
+                onClick={() => onEditDecision(index)}
+              />
             </article>
           ))}
         </section>
         <ConcernsPanel session={session} onChange={onChange} review />
+      </div>
+      <div className="review-preview">
+        <Button variant="outline" onClick={onPreview}>
+          <FileText data-icon="inline-start" />
+          Preview draft
+        </Button>
+        <span className="muted-text">
+          Previewing or downloading a draft does not approve it.
+        </span>
       </div>
       <StageFooter
         onContinue={onLock}
