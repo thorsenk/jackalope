@@ -29,6 +29,8 @@ export function StageRail({
             <li key={step}>
               <Button
                 variant="ghost"
+                aria-label={STAGE_LABELS[step]}
+                title={STAGE_LABELS[step]}
                 disabled={index > max || !onSelect}
                 aria-current={step === stage ? "step" : undefined}
                 onClick={() => onSelect?.(step)}

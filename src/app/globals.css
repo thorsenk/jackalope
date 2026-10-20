@@ -1430,3 +1430,30 @@ p {
   outline: 2px solid var(--ring);
   outline-offset: -2px;
 }
+
+.export-toolbar {
+  align-items: flex-start;
+}
+.export-toolbar > .inline-actions:first-child {
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+@media (max-width: 380px) {
+  .workflow-rail [data-slot="button"] > span:last-child {
+    display: none;
+  }
+  .workflow-rail [aria-current="step"] > span:last-child {
+    display: inline;
+  }
+  .workflow-rail [data-slot="button"] {
+    min-width: 32px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-brand > svg {
+    display: none;
+  }
+}
