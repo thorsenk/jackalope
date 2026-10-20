@@ -45,3 +45,9 @@ Standards and requirements were reviewed separately against pinned commits. The 
 ## Evidence limits
 
 This is not a full screen-reader or accessibility conformance audit, a long-term storage reliability test, or a claim that browser storage supports shared client use. Backup/source preservation has automated coverage and a browser roundtrip using the actual downloaded backup; arbitrary-file and corrupt-file handling was not exhaustively exercised. Test fixtures and screenshots prove the inspected states and interactions, not every possible project input. No public positioning or company design system was approved by this work.
+
+## Compact-density update
+
+The latest user request supersedes the enlarged visual pass: document text is 14px, controls 13px, with reduced headers, button heights, and panel padding. Concerns use one named action menu. Markdown is rendered with react-markdown without raw HTML; raw source remains unchanged. Numbered source candidates become separate unselected first-question choices. Complete quotation blocks preserve wrapped lines, lazy continuations, and paragraph qualifiers.
+
+Fifteen tests, lint, TypeScript, and production build pass. Populated desktop Notes/Decisions and narrow Notes were inspected in the in-app browser. First-question options were unselected, Accept disabled, and accepted count zero. The concern menu retained named actions. Actual private content, screenshots, and browser backup are deliberately outside this public repository. Independent requirements review found no actionable code regression; a standards finding about multiline truncation was fixed and rechecked. This validates the inspected states, not a complete real-world positioning journey or final visual approval.
