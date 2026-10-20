@@ -342,3 +342,14 @@ test("numbered source candidates become distinct unapproved choices with origina
   assert.equal(turns[0].response, undefined);
   assert.equal(new Set(turns[0].options.map((option) => option.id)).size, 2);
 });
+
+test("candidate quotations preserve wrapped lines, paragraphs, and boundaries", () => {
+  const source =
+    "## C1 · Private\n> We help gardeners grow food\n> without collecting their personal data.\n>\n> Only with their permission.\n\nCommentary outside the quote.\n\n## C2 · Local\n> We help growers\nplan their planting.\n\nOutside commentary.";
+  const options = buildClarifyFromCapture(source, "Positioning review")[0].options;
+  assert.equal(
+    options[0].claimText,
+    "We help gardeners grow food\nwithout collecting their personal data.\n\nOnly with their permission.",
+  );
+  assert.equal(options[1].claimText, "We help growers\nplan their planting.");
+});

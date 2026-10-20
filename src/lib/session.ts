@@ -1,4 +1,5 @@
 import { documentSections } from "./document-sections";
+import { fromMarkdown } from "mdast-util-from-markdown";
 import type { ClarifyTurn, WorkshopSession } from "@/lib/types";
 
 function uid(prefix: string) {
@@ -275,14 +276,25 @@ export function buildClarifyFromCapture(
   const candidateOptions = documentSections(raw)
     .filter((section) => /^C\d+\b/.test(section.title))
     .flatMap((section) => {
-      const quote = section.body.match(/^>[ \t]+(.+)$/m);
-      return quote
+      const quote = fromMarkdown(section.body).children.find(
+        (node) => node.type === "blockquote",
+      );
+      const start = quote?.position?.start.offset;
+      const end = quote?.position?.end.offset;
+      const quotation =
+        start !== undefined && end !== undefined
+          ? section.body
+              .slice(start, end)
+              .replace(/^[ \t]*>[ \t]?/gm, "")
+              .trim()
+          : "";
+      return quotation
         ? [
             {
               id: section.id,
               label: section.title,
               claimKind: "who_outcome" as const,
-              claimText: quote[1],
+              claimText: quotation,
             },
           ]
         : [];
