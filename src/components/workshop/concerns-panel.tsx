@@ -168,7 +168,11 @@ export function ConcernsPanel({
           </Empty>
         )}
         {session.concerns.map((text, index) => (
-          <article className="concern-item" key={text}>
+          <article
+            className="concern-item"
+            data-editing={editing === text}
+            key={text}
+          >
             {editing === text ? (
               <>
                 <Field>
@@ -214,21 +218,6 @@ export function ConcernsPanel({
               <>
                 <p>{recoverConcernText(text, session.rawCapture)}</p>
                 <div className="concern-actions">
-                  <IconAction
-                    label={`Edit concern ${index + 1}`}
-                    icon={Pencil}
-                    onClick={() => {
-                      setEditing(text);
-                      setEditDraft(
-                        recoverConcernText(text, session.rawCapture),
-                      );
-                    }}
-                  />
-                  <IconAction
-                    label={`Resolve concern ${index + 1}`}
-                    icon={Check}
-                    onClick={() => move(text, "resolved")}
-                  />
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       render={

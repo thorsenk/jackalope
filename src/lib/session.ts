@@ -1,3 +1,4 @@
+import { documentSections } from "./document-sections";
 import type { ClarifyTurn, WorkshopSession } from "@/lib/types";
 
 function uid(prefix: string) {
@@ -31,14 +32,14 @@ export function buildSampleClarifyTurns(): ClarifyTurn[] {
   return [
     {
       id: uid("q"),
-      prompt:
-        "Who is this for, and what outcome counts as done on Friday?",
+      prompt: "Who is this for, and what outcome counts as done on Friday?",
       facilitation:
         "Pick the framing that feels runnable. Soft briefs start here — name a person and a finish line.",
       options: [
         {
           id: "o1",
-          label: "Small product teams; Friday one-pager that names what changed",
+          label:
+            "Small product teams; Friday one-pager that names what changed",
           claimKind: "who_outcome",
           claimText:
             "For product teams of 3–8: every Friday, ship a one-pager that names what changed in the team's understanding of the problem.",
@@ -61,7 +62,8 @@ export function buildSampleClarifyTurns(): ClarifyTurn[] {
     },
     {
       id: uid("q"),
-      prompt: "What’s the taste bar — what should this feel like when it’s right?",
+      prompt:
+        "What’s the taste bar — what should this feel like when it’s right?",
       facilitation:
         "Recognition over blank worksheets. Accept a bar you can smell in the UI, or reframe it.",
       options: [
@@ -96,7 +98,8 @@ export function buildSampleClarifyTurns(): ClarifyTurn[] {
       options: [
         {
           id: "o1",
-          label: "Offline-first laptop use, no auth in the first slice, markdown export",
+          label:
+            "Offline-first laptop use, no auth in the first slice, markdown export",
           claimKind: "hard_constraint",
           claimText:
             "Must work offline-first on a laptop; no auth for the first slice; export to markdown.",
@@ -105,8 +108,7 @@ export function buildSampleClarifyTurns(): ClarifyTurn[] {
           id: "o2",
           label: "Must sync live across devices with SSO on day one",
           claimKind: "hard_constraint",
-          claimText:
-            "Live multi-device sync and SSO required on day one.",
+          claimText: "Live multi-device sync and SSO required on day one.",
         },
         {
           id: "o3",
@@ -124,7 +126,8 @@ export function buildSampleClarifyTurns(): ClarifyTurn[] {
       options: [
         {
           id: "o1",
-          label: "No social feed, no voice-rewriting AI summaries, no multiplayer theater",
+          label:
+            "No social feed, no voice-rewriting AI summaries, no multiplayer theater",
           claimKind: "non_goal",
           claimText:
             "Non-goals: social feed; AI auto-summaries that rewrite the researcher's voice; multiplayer editing theater.",
@@ -153,7 +156,8 @@ export function buildSampleClarifyTurns(): ClarifyTurn[] {
       options: [
         {
           id: "o1",
-          label: "Signal = sourced observation; claim = interpretation the team stands behind",
+          label:
+            "Signal = sourced observation; claim = interpretation the team stands behind",
           claimKind: "shared_term",
           claimText:
             '"Signal" = concrete quote or observation with source. "Claim" = interpretation the team is willing to stand behind.',
@@ -182,7 +186,8 @@ export function buildSampleClarifyTurns(): ClarifyTurn[] {
       options: [
         {
           id: "o1",
-          label: "Authorize layout, empty states, export formatting; pause on methods or signal/claim changes",
+          label:
+            "Authorize layout, empty states, export formatting; pause on methods or signal/claim changes",
           claimKind: "authorization",
           claimText:
             "Authorized without Kyle: layout and typography exploration, empty states, export formatting. Not authorized: inventing research methods or changing the signal/claim distinction.",
@@ -258,19 +263,87 @@ export function suggestConcerns(raw: string): string[] {
   return worryish.slice(0, 5).map((l) => l.replace(/^[-•*]\s*/, ""));
 }
 
-export function buildClarifyFromCapture(raw: string, title: string): ClarifyTurn[] {
+export function buildClarifyFromCapture(
+  raw: string,
+  title: string,
+): ClarifyTurn[] {
   if (title === SAMPLE_TITLE) return buildSampleClarifyTurns();
-  const paragraphs = raw.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  const paragraphs = raw
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const candidateOptions = documentSections(raw)
+    .filter((section) => /^C\d+\b/.test(section.title))
+    .flatMap((section) => {
+      const quote = section.body.match(/^>[ \t]+(.+)$/m);
+      return quote
+        ? [
+            {
+              id: section.id,
+              label: section.title,
+              claimKind: "who_outcome" as const,
+              claimText: quote[1],
+            },
+          ]
+        : [];
+    });
   const definitions = [
-    {kind: "who_outcome", prompt: "Who is this for, and what outcome matters?", match: /household|audience|users|people|outcome/i},
-    {kind: "taste_bar", prompt: "What should the experience look and feel like?", match: /visual|typography|feel|taste|craft/i},
-    {kind: "hard_constraint", prompt: "What must the build respect?", match: /must|privacy|constraint|permission/i},
-    {kind: "non_goal", prompt: "Are there genuine exclusions or boundaries to record?", match: /non-goal|exclusion|not building/i},
-    {kind: "shared_term", prompt: "Which terms need a shared meaning?", match: /vocabulary|definition|brick|means/i},
-    {kind: "authorization", prompt: "What can the team do independently, and what needs review?", match: /authoriz|explicit.*action|review.*action/i},
+    {
+      kind: "who_outcome",
+      prompt: "Who is this for, and what outcome matters?",
+      match: /household|audience|users|people|outcome/i,
+    },
+    {
+      kind: "taste_bar",
+      prompt: "What should the experience look and feel like?",
+      match: /visual|typography|feel|taste|craft/i,
+    },
+    {
+      kind: "hard_constraint",
+      prompt: "What must the build respect?",
+      match: /must|privacy|constraint|permission/i,
+    },
+    {
+      kind: "non_goal",
+      prompt: "Are there genuine exclusions or boundaries to record?",
+      match: /non-goal|exclusion|not building/i,
+    },
+    {
+      kind: "shared_term",
+      prompt: "Which terms need a shared meaning?",
+      match: /vocabulary|definition|brick|means/i,
+    },
+    {
+      kind: "authorization",
+      prompt: "What can the team do independently, and what needs review?",
+      match: /authoriz|explicit.*action|review.*action/i,
+    },
   ] as const;
-  return definitions.map(({kind,prompt,match}) => {
-    const excerpt = paragraphs.find(p => match.test(p));
-    return {id:uid("q"),prompt,facilitation:`Working from “${title}”. Captured wording is a starting proposal, not an accepted decision.`,options:excerpt?[{id:"capture-excerpt",label:"Start from your captured wording",claimKind:kind,claimText:excerpt}]:[]};
+  return definitions.map(({ kind, prompt, match }) => {
+    if (kind === "who_outcome" && candidateOptions.length > 1) {
+      return {
+        id: uid("q"),
+        prompt: "Which candidate best expresses what this brand does?",
+        facilitation:
+          "These are the preserved source candidates, not approved positioning.",
+        options: candidateOptions,
+      };
+    }
+    const excerpt = paragraphs.find((p) => match.test(p));
+    return {
+      id: uid("q"),
+      prompt,
+      facilitation: `Working from “${title}”. Captured wording is a starting proposal, not an accepted decision.`,
+      options: excerpt
+        ? [
+            {
+              id: "capture-excerpt",
+              label: "Start from your captured wording",
+              claimKind: kind,
+              claimText: excerpt,
+            },
+          ]
+        : [],
+    };
   });
 }

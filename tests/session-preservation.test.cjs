@@ -328,3 +328,17 @@ test("decision display removes duplicate source headings without altering stored
     "People we must not target\n\nResearchers",
   );
 });
+
+test("numbered source candidates become distinct unapproved choices with original wording", () => {
+  const source =
+    "## C1 · Plain\n> We make tools for gardeners.\n\n## C2 · Specific\n> We help growers plan their planting.";
+  const turns = buildClarifyFromCapture(source, "Positioning review");
+  assert.equal(turns[0].options.length, 2);
+  assert.equal(turns[0].options[0].claimText, "We make tools for gardeners.");
+  assert.equal(
+    turns[0].options[1].claimText,
+    "We help growers plan their planting.",
+  );
+  assert.equal(turns[0].response, undefined);
+  assert.equal(new Set(turns[0].options.map((option) => option.id)).size, 2);
+});

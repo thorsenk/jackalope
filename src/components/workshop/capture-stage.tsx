@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import Markdown from "react-markdown";
 import {
   AlignLeft,
   BookOpen,
@@ -187,10 +188,6 @@ export function CaptureStage({
 
   return (
     <div className="capture-workspace">
-      <header className="task-heading">
-        <h2>{words === 0 ? "Start with your idea." : "Your project notes."}</h2>
-        <p>Add the context you want the brief to preserve.</p>
-      </header>
       {notice && (
         <Alert>
           <AlertDescription>{notice}</AlertDescription>
@@ -214,6 +211,7 @@ export function CaptureStage({
                 <Button
                   variant="ghost"
                   key={section.id}
+                  title={section.title}
                   aria-current={
                     index === sectionIndex && !readAll ? "location" : undefined
                   }
@@ -284,13 +282,23 @@ export function CaptureStage({
           aria-label={editing ? "Source editor" : "Capture document"}
         >
           <div className="panel-toolbar">
-            <h2>
+            <h2
+              title={
+                editing
+                  ? "Your notes"
+                  : readAll
+                    ? "All notes"
+                    : (current?.title ?? "Notes")
+              }
+            >
               <FileText aria-hidden="true" />
-              {editing
-                ? "Your notes"
-                : readAll
-                  ? "All notes"
-                  : (current?.title ?? "Notes")}
+              <span className="panel-title">
+                {editing
+                  ? "Your notes"
+                  : readAll
+                    ? "All notes"
+                    : (current?.title ?? "Notes")}
+              </span>
             </h2>
             {toolbar}
             <div className="reading-actions">
@@ -357,9 +365,7 @@ export function CaptureStage({
                 {(readAll ? sections : [current]).map((section) => (
                   <article id={section.id} key={section.id}>
                     {readAll && <h3>{section.title}</h3>}
-                    {section.body.split(/\n\s*\n/).map((paragraph, index) => (
-                      <p key={index}>{paragraph}</p>
-                    ))}
+                    <Markdown>{section.body}</Markdown>
                   </article>
                 ))}
               </div>

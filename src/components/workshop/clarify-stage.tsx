@@ -177,7 +177,9 @@ export function ClarifyStage({
                 key={item.id}
                 value={item.id}
               >
-                <span className="proposal-label">From your notes</span>
+                <span className="proposal-label" title={item.label}>
+                  {turn.options.length > 1 ? item.label : "From your notes"}
+                </span>
                 <span className="proposal-text">
                   {decisionTextForDisplay(item.claimText, item.claimKind)}
                 </span>
