@@ -33,3 +33,13 @@ Actual DOM measurements confirmed 16px source text with 28.8px line height, 18px
 - `visual-v2-decisions-desktop.png`
 
 Independent visual inspection and final production-build checks follow this candidate. Do not substitute prior tests or an agent's conclusion for inspecting the actual result.
+
+## Populated phone walkthrough and follow-through
+
+Inspected populated phone editing, selection-to-concern, Decisions, Review, and Export at 390 by 844. The selected source wording became a concern without changing the 68-word source. The approval bar exposed the blocking open concern; resolving it enabled approval. The shared type scale remained readable through the later stages.
+
+This walkthrough exposed an existing navigation problem: following a bottom-of-page action could open the next stage at the old scroll position. Stage/question transitions now focus the main landmark and scroll to the top. A real Review-to-Export transition verified both focus and scroll position zero. This does not move focus while typing because the effect depends on the stage/question index, not draft text.
+
+Also removed duplicated category headings from presentation only. The helper strips a leading heading only when it repeats the displayed category; meaningful source headings, including negative qualifiers, remain visible. Stored claims and Markdown export remain unchanged. A regression test covers source preservation and the meaningful-heading boundary.
+
+Independent visual inspection of the six initial correction artifacts found meaningful hierarchy/readability improvement and no material visual defect. It correctly withheld a complete phone conclusion until the populated-phone artifacts existed. The added screenshots and runtime checks close that specific gap; they do not establish blanket design acceptance or accessibility compliance.

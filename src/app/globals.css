@@ -214,6 +214,9 @@ p {
 
   padding: 36px 36px 40px;
 }
+.app-main:focus {
+  outline: none;
+}
 .workshop-app {
   display: flex;
   flex-direction: column;
@@ -756,7 +759,7 @@ p {
   align-items: center;
   gap: 8px;
   color: var(--muted-foreground);
-  font-size: var(--type-caption);
+  font-size: var(--type-control);
 }
 .source-reference summary svg {
   width: 14px;
@@ -791,11 +794,13 @@ p {
 }
 .section-heading .muted-text {
   margin: 10px 0 0;
+  font-size: var(--type-body);
 }
 .review-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 40px;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 32px;
+  align-items: start;
 }
 .decision-checklist {
   min-width: 0;
@@ -1181,6 +1186,9 @@ p {
     gap: 6px;
   }
   .review-workspace .footer-context > span {
+    display: inline;
+  }
+  .review-workspace .footer-context > [data-slot="button"] {
     display: none;
   }
   .decision-outline {
@@ -1205,8 +1213,11 @@ p {
     margin-bottom: 24px;
   }
   .decision-navigation {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 12px;
+  }
+  .decision-navigation > span {
+    display: none;
   }
   .proposal-list .proposal-option {
     padding: 18px 38px 18px 18px;

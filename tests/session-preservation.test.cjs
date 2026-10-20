@@ -296,3 +296,35 @@ test("replacing a decision retains its earlier wording without duplicate active 
   assert.equal(rejected.filter((c) => c.status === "accepted").length, 0);
   assert.equal(previous.status, "accepted");
 });
+
+test("decision display removes duplicate source headings without altering stored wording", () => {
+  const { decisionTextForDisplay } = require(path.join(lib, "decisions.ts"));
+  const source =
+    "## Constraints\n\nKeep the original evidence.\nAnother complete line.";
+  assert.equal(
+    decisionTextForDisplay(source, "hard_constraint"),
+    "Keep the original evidence.\nAnother complete line.",
+  );
+  assert.equal(
+    source,
+    "## Constraints\n\nKeep the original evidence.\nAnother complete line.",
+  );
+  assert.equal(
+    decisionTextForDisplay(
+      "Plain first line\nKeep this too.",
+      "hard_constraint",
+    ),
+    "Plain first line\nKeep this too.",
+  );
+  assert.equal(
+    decisionTextForDisplay("## A heading alone", "hard_constraint"),
+    "A heading alone",
+  );
+  assert.equal(
+    decisionTextForDisplay(
+      "## People we must not target\n\nResearchers",
+      "who_outcome",
+    ),
+    "People we must not target\n\nResearchers",
+  );
+});

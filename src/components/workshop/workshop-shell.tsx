@@ -34,7 +34,7 @@ export function WorkshopShell({
             </nav>
           </div>
         </header>
-        <main className="app-main">
+        <main className="app-main" id="workshop-main" tabIndex={-1}>
           <WorkshopApp key={variant} variant={variant} />
         </main>
       </div>

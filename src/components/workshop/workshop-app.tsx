@@ -56,6 +56,12 @@ export function WorkshopApp({
 
   useEffect(() => {
     if (!ready) return;
+    document.getElementById("workshop-main")?.focus({ preventScroll: true });
+    window.scrollTo(0, 0);
+  }, [ready, session.stage, session.clarifyIndex]);
+
+  useEffect(() => {
+    if (!ready) return;
     const success = saveSession(session, storageKey);
     queueMicrotask(() => {
       setSaved(success);

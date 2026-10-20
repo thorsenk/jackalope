@@ -1,4 +1,4 @@
-import type { Claim } from "./types";
+import type { Claim, ClaimKind } from "./types";
 
 export type DecisionClaim = Omit<Claim, "status"> & {
   status: "accepted" | "rejected";
@@ -17,4 +17,28 @@ export function recordDecision(claims: Claim[], next: DecisionClaim): Claim[] {
     ),
     next,
   ];
+}
+
+const categoryHeadings: Record<ClaimKind, string[]> = {
+  who_outcome: ["audience", "outcome", "audience and outcome", "who / outcome"],
+  taste_bar: ["look and feel", "taste bar"],
+  hard_constraint: ["constraints", "hard constraint", "hard constraints"],
+  non_goal: ["non-goal", "non-goals", "out of scope", "boundaries"],
+  shared_term: ["language", "shared term", "shared terms", "terminology"],
+  authorization: ["permissions", "authorization", "authorisation"],
+};
+
+/** Hide a repeated category label in the UI, while preserving meaningful source headings. */
+export function decisionTextForDisplay(text: string, kind: ClaimKind): string {
+  const heading = text.match(/^#{1,6}[ \t]+([^\n]+)\n+/);
+  const title = heading?.[1]
+    .trim()
+    .toLowerCase()
+    .replaceAll("&", "and")
+    .replace(/\s+/g, " ");
+  const body =
+    heading && title && categoryHeadings[kind].includes(title)
+      ? text.slice(heading[0].length)
+      : text;
+  return (body.trim() ? body : text).replace(/^#{1,6}[ \t]+/gm, "");
 }

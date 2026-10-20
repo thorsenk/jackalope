@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { lockGateStatus, isLockReady } from "@/lib/storage";
 import type { WorkshopSession } from "@/lib/types";
 import { ConcernsPanel } from "./concerns-panel";
+import { decisionTextForDisplay } from "@/lib/decisions";
 import { HelpTip, StageFooter } from "./workshop-controls";
 
 export function LockStage({
@@ -62,8 +63,9 @@ export function LockStage({
               <div>
                 <h3>{gate.label}</h3>
                 <p>
-                  {gate.claim?.text.replace(/^#{1,6}\s+/gm, "") ??
-                    "Needs a decision."}
+                  {gate.claim
+                    ? decisionTextForDisplay(gate.claim.text, gate.kind)
+                    : "Needs a decision."}
                 </p>
               </div>
             </article>

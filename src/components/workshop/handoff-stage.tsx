@@ -32,6 +32,7 @@ import {
 } from "@/lib/export";
 import { isLockReady } from "@/lib/storage";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { decisionTextForDisplay } from "@/lib/decisions";
 import { HelpTip } from "./workshop-controls";
 
 export function HandoffStage({
@@ -186,7 +187,7 @@ export function HandoffStage({
                   <Badge variant="outline">Proposed</Badge>
                 )}
               </div>
-              <p>{claim.text.replace(/^#{1,6}\s+/gm, "")}</p>
+              <p>{decisionTextForDisplay(claim.text, claim.kind)}</p>
             </section>
           ))}
         {[

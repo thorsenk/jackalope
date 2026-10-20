@@ -20,7 +20,11 @@ import {
   type WorkshopSession,
   type ClarifyResponse,
 } from "@/lib/types";
-import { recordDecision, type DecisionClaim } from "@/lib/decisions";
+import {
+  recordDecision,
+  decisionTextForDisplay,
+  type DecisionClaim,
+} from "@/lib/decisions";
 import { HelpTip, IconAction } from "./workshop-controls";
 
 export function ClarifyStage({
@@ -175,7 +179,7 @@ export function ClarifyStage({
               >
                 <span className="proposal-label">From your notes</span>
                 <span className="proposal-text">
-                  {item.claimText.replace(/^#{1,6}\s+/gm, "")}
+                  {decisionTextForDisplay(item.claimText, item.claimKind)}
                 </span>
                 {selectedId === item.id && <Check aria-hidden="true" />}
               </ToggleGroupItem>
