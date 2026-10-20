@@ -1,6 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CheckCircle2, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Field, FieldLabel } from "@/components/ui/field";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CaptureStage } from "@/components/workshop/capture-stage";
 import { ClarifyStage } from "@/components/workshop/clarify-stage";
 import { HandoffStage } from "@/components/workshop/handoff-stage";
@@ -15,33 +24,63 @@ import { clearSession, loadSession, saveSession } from "@/lib/storage";
 import type { Stage, WorkshopSession } from "@/lib/types";
 import { STAGE_ORDER } from "@/lib/types";
 
-export function WorkshopApp({variant="standard"}:{variant?:"standard"|"cornell"}) {
-  const storageKey = variant === "cornell" ? "jackalope.workshop.cornell.v1" : undefined;
-  const [session, setSession] = useState<WorkshopSession>(() => createEmptySession());
+export function WorkshopApp({
+  variant = "standard",
+}: {
+  variant?: "standard" | "cornell";
+}) {
+  const storageKey =
+    variant === "cornell" ? "jackalope.workshop.cornell.v1" : undefined;
+  const [session, setSession] = useState<WorkshopSession>(() =>
+    createEmptySession(),
+  );
   const [ready, setReady] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
     // Read browser-only storage after hydration, before rendering the editable document.
     queueMicrotask(() => {
       if (!active) return;
-      const existing = loadSession(storageKey) ?? (variant === "cornell" ? loadSession() : null);
+      const existing =
+        loadSession(storageKey) ??
+        (variant === "cornell" ? loadSession() : null);
       if (existing) setSession(existing);
       setReady(true);
     });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [storageKey, variant]);
 
   useEffect(() => {
     if (!ready) return;
     const success = saveSession(session, storageKey);
-    queueMicrotask(() => setSaved(success));
+    queueMicrotask(() => {
+      setSaved(success);
+      setSaveFailed(!success);
+    });
   }, [session, ready, storageKey]);
 
   function patch(partial: Partial<WorkshopSession>) {
     setSaved(false);
-    setSession((prev) => ({ ...prev, ...partial, ...((partial.rawCapture !== undefined || partial.claims !== undefined || partial.title !== undefined || partial.concerns !== undefined || partial.cornellSummary !== undefined || partial.cornellCues !== undefined || partial.cornellSectionCues !== undefined || partial.deferredConcerns !== undefined || partial.resolvedConcerns !== undefined) && prev.lockedAt ? {lockedAt:undefined,handoffStatus:"draft" as const}: {}) }));
+    setSession((prev) => ({
+      ...prev,
+      ...partial,
+      ...((partial.rawCapture !== undefined ||
+        partial.claims !== undefined ||
+        partial.title !== undefined ||
+        partial.concerns !== undefined ||
+        partial.cornellSummary !== undefined ||
+        partial.cornellCues !== undefined ||
+        partial.cornellSectionCues !== undefined ||
+        partial.deferredConcerns !== undefined ||
+        partial.resolvedConcerns !== undefined) &&
+      prev.lockedAt
+        ? { lockedAt: undefined, handoffStatus: "draft" as const }
+        : {}),
+    }));
   }
 
   function go(stage: Stage) {
@@ -49,7 +88,10 @@ export function WorkshopApp({variant="standard"}:{variant?:"standard"|"cornell"}
   }
 
   function startClarify() {
-    const hasResponses = session.clarifyTurns.some((t) => t.response) || session.claims.length > 0 || Boolean(session.clarifyDrafts);
+    const hasResponses =
+      session.clarifyTurns.some((t) => t.response) ||
+      session.claims.length > 0 ||
+      Boolean(session.clarifyDrafts);
     const turns = hasResponses
       ? session.clarifyTurns
       : buildClarifyFromCapture(session.rawCapture, session.title);
@@ -71,36 +113,95 @@ export function WorkshopApp({variant="standard"}:{variant?:"standard"|"cornell"}
   }
 
   const currentIdx = STAGE_ORDER.indexOf(session.stage);
-  const allowUpTo = STAGE_ORDER[currentIdx];
+  const availableIdx = session.lockedAt
+    ? 3
+    : session.claims.length
+      ? 2
+      : session.clarifyTurns.length
+        ? 1
+        : 0;
+  const maxStageIdx = Math.max(currentIdx, availableIdx);
+  const allowUpTo = STAGE_ORDER[maxStageIdx];
 
-  if (!ready) return <p className="nt-label" role="status">Loading your saved workshop…</p>;
+  if (!ready)
+    return (
+      <p className="loading-state" role="status">
+        Opening workshop…
+      </p>
+    );
 
   return (
     <div className="workshop-app">
-      {variant === "cornell" && <div className="candidate-banner"><strong>Cornell format · Separate candidate</strong><span>Compare cues, notes, and synthesis. This draft starts from your guided document and saves separately.</span></div>}
-      {!ready && (
-        <p className="font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
-          Syncing local session…
+      <div className="workshop-heading">
+        <Field>
+          <FieldLabel className="sr-only" htmlFor="workshop-title">
+            Workshop title
+          </FieldLabel>
+          <Input
+            id="workshop-title"
+            value={session.title}
+            onChange={(event) => patch({ title: event.target.value })}
+            placeholder="Name your workshop"
+          />
+        </Field>
+        <Tooltip>
+          <TooltipTrigger
+            className="save-indicator"
+            aria-label={
+              saveFailed
+                ? "Could not save"
+                : saved
+                  ? "Saved in this browser"
+                  : "Saving"
+            }
+          >
+            {saveFailed ? (
+              <AlertCircle aria-hidden="true" />
+            ) : (
+              <CheckCircle2 aria-hidden="true" />
+            )}
+            <span>
+              {saveFailed ? "Not saved" : saved ? "Saved" : "Saving…"}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            Saved in this browser. Use Download backup to keep a separate copy.
+          </TooltipContent>
+        </Tooltip>
+      </div>
+      {variant === "cornell" && (
+        <p className="candidate-notice">
+          Cornell format · Saves separately from your document.
         </p>
+      )}
+      {saveFailed && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            Changes are not saved. Download a backup from Document actions
+            before leaving.
+          </AlertDescription>
+        </Alert>
       )}
 
       <StageRail
         stage={session.stage}
         allowUpTo={allowUpTo}
         onSelect={(s) => {
-          if (STAGE_ORDER.indexOf(s) <= currentIdx) go(s);
+          if (STAGE_ORDER.indexOf(s) <= maxStageIdx) go(s);
         }}
       />
 
       {session.stage === "capture" && (
         <CaptureStage
-          saved={saved}
           variant={variant}
           session={session}
           onChange={patch}
           onContinue={startClarify}
           onLoadSample={loadSample}
-          onRestore={(restored)=>{setSaved(false);setSession(restored);}}
+          onRestore={(restored) => {
+            setSaved(false);
+            setSession(restored);
+          }}
         />
       )}
 

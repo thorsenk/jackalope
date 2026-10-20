@@ -56,10 +56,10 @@ export interface WorkshopSession {
   concerns: string[];
   resolvedConcerns?: string[];
   cornellCues?: string;
-  cornellSectionCues?: Record<string,string>;
+  cornellSectionCues?: Record<string, string>;
   reviewedSections?: string[];
   cornellSummary?: string;
-  clarifyDrafts?: Partial<Record<ClaimKind,string>>;
+  clarifyDrafts?: Partial<Record<ClaimKind, string>>;
   removedConcerns?: string[];
   /** Explicitly deferred concerns (acknowledged, not blocking Lock). */
   deferredConcerns: string[];
@@ -73,10 +73,10 @@ export interface WorkshopSession {
 export const STAGE_ORDER: Stage[] = ["capture", "clarify", "lock", "handoff"];
 
 export const STAGE_LABELS: Record<Stage, string> = {
-  capture: "Capture",
-  clarify: "Clarify",
-  lock: "Lock",
-  handoff: "Hand off",
+  capture: "Notes",
+  clarify: "Decisions",
+  lock: "Review",
+  handoff: "Export",
 };
 
 export const STAGE_BLURBS: Record<Stage, string> = {
@@ -87,12 +87,12 @@ export const STAGE_BLURBS: Record<Stage, string> = {
 };
 
 export const CLAIM_KIND_LABELS: Record<ClaimKind, string> = {
-  who_outcome: "Who / outcome",
-  taste_bar: "Taste bar",
-  hard_constraint: "Hard constraint",
-  non_goal: "Non-goal",
-  shared_term: "Shared term",
-  authorization: "Authorized without Kyle",
+  who_outcome: "Audience & outcome",
+  taste_bar: "Look & feel",
+  hard_constraint: "Constraints",
+  non_goal: "Out of scope",
+  shared_term: "Language",
+  authorization: "Permissions",
 };
 
 export const LOCK_GATE_KINDS: ClaimKind[] = [

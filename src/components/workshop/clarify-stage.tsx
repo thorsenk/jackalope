@@ -1,26 +1,276 @@
 "use client";
-import {useState} from "react";
-import {Button} from "@/components/ui/button";
-import {CLAIM_KIND_LABELS,LOCK_GATE_KINDS,type WorkshopSession,type Claim,type ClarifyResponse} from "@/lib/types";
-export function ClarifyStage({session,onChange,onBack,onFinish}:{session:WorkshopSession;onChange:(patch:Partial<WorkshopSession>)=>void;onBack:()=>void;onFinish:()=>void}){
- const index=Math.min(session.clarifyIndex,Math.max(0,session.clarifyTurns.length-1));
- const turn=session.clarifyTurns[index];
- const kind=LOCK_GATE_KINDS[index]??"who_outcome";
- const [selected,setSelected]=useState<string>(turn?.response?.optionId??"");
- const [reframing,setReframing]=useState(false);
- const draft=session.clarifyDrafts?.[kind]??session.claims.find(c=>c.kind===kind&&c.status==="accepted")?.text??"";
- const option=turn?.options.find(o=>o.id===selected);
- if(!turn)return <section className="decision-card"><h2>Return to Capture to start the decisions.</h2><Button onClick={onBack}>Back to Capture</Button></section>;
- function move(next:number){onChange({clarifyIndex:next});setSelected("");setReframing(false);}
- function respond(type:ClarifyResponse["type"]){
-   const text=reframing?draft.trim():option?.claimText;
-   if(!text)return;
-   const response:ClarifyResponse={type,optionId:option?.id,reframedText:reframing?text:undefined};
-   const claim:Claim={id:`decision-${kind}-${Date.now()}`,kind:option?.claimKind??kind,text,status:type==="reject"?"rejected":"accepted",originalText:reframing?option?.claimText:undefined};
-   const turns=session.clarifyTurns.map((t,i)=>i===index?{...t,response}:t);
-   const claims=[...session.claims.filter(c=>!(c.kind===claim.kind&&c.status==="accepted")),claim];
-   onChange({clarifyTurns:turns,claims,clarifyIndex:type==="reject"?index:Math.min(index+1,session.clarifyTurns.length-1)});
-   if(type!=="reject"){if(index===session.clarifyTurns.length-1)onFinish();setSelected("");setReframing(false);}
- }
- return <section><div className="decision-card"><p className="nt-label">Step 02 · Clarify · Decision {index+1} of {session.clarifyTurns.length}</p><h2>{turn.prompt}</h2><p>Review a proposal, reject it, or use your own wording. Nothing becomes a decision until you accept it.</p><div className="clarify-options" role="group" aria-label="Decision proposals">{turn.options.map(o=><button key={o.id} type="button" className="clarify-option" aria-pressed={selected===o.id&&!reframing} onClick={()=>{setSelected(o.id);setReframing(false);}}><span>Proposed framing</span><strong>{o.label}</strong></button>)}</div><Button variant="outline" onClick={()=>{setReframing(true);if(!draft&&option)onChange({clarifyDrafts:{...session.clarifyDrafts,[kind]:option.claimText}});}}>Write or reframe this decision</Button>{reframing&&<><label className="decision-label" htmlFor="decision">Your wording · {CLAIM_KIND_LABELS[kind]}</label><textarea id="decision" className="decision-textarea" value={draft} onChange={e=>onChange({clarifyDrafts:{...session.clarifyDrafts,[kind]:e.target.value}})} placeholder="Keep the intent. State the decision in your own words."/></>}{option&&!reframing&&<div className="review-row"><h3>Selected proposal</h3><p>{option.claimText}</p></div>}<div className="stage-buttons"><Button disabled={reframing?!draft.trim():!option} onClick={()=>respond(reframing?"reframe":"accept")}>{reframing?"Accept revised wording":"Accept proposal"} {index===session.clarifyTurns.length-1?"& review":"& continue"}</Button><Button variant="outline" disabled={reframing?!draft.trim():!option} onClick={()=>respond("reject")}>Reject & stay on question</Button>{index>0&&<Button variant="ghost" onClick={()=>move(index-1)}>Previous decision</Button>}<Button variant="ghost" onClick={onBack}>Back to Capture</Button></div>{turn.response?.type==="reject"&&<p role="status">Proposal rejected. Choose another framing or write your own.</p>}</div><details className="review-row"><summary>Reference your captured direction · {session.concerns.length} open concerns</summary><p style={{whiteSpace:"pre-wrap",maxHeight:400,overflow:"auto"}}>{session.rawCapture}</p></details></section>;
+
+import { useState } from "react";
+import {
+  ArrowLeft,
+  Check,
+  FileText,
+  Pencil,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  CLAIM_KIND_LABELS,
+  LOCK_GATE_KINDS,
+  type WorkshopSession,
+  type Claim,
+  type ClarifyResponse,
+} from "@/lib/types";
+import { HelpTip, IconAction } from "./workshop-controls";
+
+export function ClarifyStage({
+  session,
+  onChange,
+  onBack,
+  onFinish,
+}: {
+  session: WorkshopSession;
+  onChange: (patch: Partial<WorkshopSession>) => void;
+  onBack: () => void;
+  onFinish: () => void;
+}) {
+  const index = Math.min(
+    session.clarifyIndex,
+    Math.max(0, session.clarifyTurns.length - 1),
+  );
+  const turn = session.clarifyTurns[index];
+  const kind = LOCK_GATE_KINDS[index] ?? "who_outcome";
+  const [selected, setSelected] = useState("");
+  const [reframing, setReframing] = useState(false);
+  const draft =
+    session.clarifyDrafts?.[kind] ??
+    session.claims.find(
+      (claim) => claim.kind === kind && claim.status === "accepted",
+    )?.text ??
+    "";
+  const selectedId =
+    selected ||
+    (turn?.options.length === 1
+      ? turn.options[0].id
+      : (turn?.response?.optionId ?? ""));
+  const option = turn?.options.find((item) => item.id === selectedId);
+  const writing = reframing || !turn?.options.length;
+  const text = writing ? draft.trim() : option?.claimText;
+  if (!turn)
+    return (
+      <div className="quiet-empty">
+        <p>Add your notes to start.</p>
+        <Button onClick={onBack}>Back to notes</Button>
+      </div>
+    );
+
+  function move(next: number) {
+    onChange({ clarifyIndex: next });
+    setSelected("");
+    setReframing(false);
+  }
+  function respond(type: ClarifyResponse["type"]) {
+    if (!text) return;
+    const response: ClarifyResponse = {
+      type,
+      optionId: option?.id,
+      reframedText: writing ? text : undefined,
+    };
+    const claim: Claim = {
+      id: `decision-${kind}-${Date.now()}`,
+      kind: option?.claimKind ?? kind,
+      text,
+      status: type === "reject" ? "rejected" : "accepted",
+      originalText: writing ? option?.claimText : undefined,
+    };
+    onChange({
+      clarifyTurns: session.clarifyTurns.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, response } : item,
+      ),
+      claims: [
+        ...session.claims.filter(
+          (item) => !(item.kind === claim.kind && item.status === "accepted"),
+        ),
+        claim,
+      ],
+      clarifyIndex:
+        type === "reject"
+          ? index
+          : Math.min(index + 1, session.clarifyTurns.length - 1),
+    });
+    if (type !== "reject") {
+      if (index === session.clarifyTurns.length - 1) onFinish();
+      setSelected("");
+      setReframing(false);
+    }
+  }
+
+  return (
+    <div className="decision-workspace">
+      <aside className="decision-outline" aria-label="Decisions">
+        <h2 className="eyebrow">Decisions</h2>
+        {LOCK_GATE_KINDS.map((item, itemIndex) => {
+          const accepted = session.claims.some(
+            (claim) => claim.kind === item && claim.status === "accepted",
+          );
+          return (
+            <Button
+              variant="ghost"
+              key={item}
+              aria-current={index === itemIndex ? "step" : undefined}
+              onClick={() => move(itemIndex)}
+            >
+              <span className="outline-marker">
+                {accepted ? (
+                  <Check aria-label="Accepted" />
+                ) : (
+                  String(itemIndex + 1).padStart(2, "0")
+                )}
+              </span>
+              {CLAIM_KIND_LABELS[item]}
+            </Button>
+          );
+        })}
+      </aside>
+      <section className="decision-focus">
+        <header className="decision-heading">
+          <div>
+            <p className="eyebrow">
+              {index + 1} of {session.clarifyTurns.length} ·{" "}
+              {CLAIM_KIND_LABELS[kind]}
+            </p>
+            <h2>{turn.prompt}</h2>
+          </div>
+          <HelpTip label="About decision proposals">
+            Proposals come from your notes. Accept, edit, or reject them;
+            nothing is approved automatically.
+          </HelpTip>
+        </header>
+        {writing ? (
+          <Field>
+            <FieldLabel htmlFor="decision">Your wording</FieldLabel>
+            <Textarea
+              id="decision"
+              autoFocus
+              value={draft}
+              onChange={(event) =>
+                onChange({
+                  clarifyDrafts: {
+                    ...session.clarifyDrafts,
+                    [kind]: event.target.value,
+                  },
+                })
+              }
+              placeholder="What should the brief say?"
+              rows={7}
+            />
+          </Field>
+        ) : (
+          <ToggleGroup
+            className="proposal-list"
+            aria-label="Decision proposals"
+            value={selectedId ? [selectedId] : []}
+            onValueChange={(values) => setSelected(String(values[0] ?? ""))}
+          >
+            {turn.options.map((item) => (
+              <ToggleGroupItem
+                className="proposal-option"
+                key={item.id}
+                value={item.id}
+              >
+                <span className="proposal-label">From your notes</span>
+                <span className="proposal-text">
+                  {item.claimText.replace(/^#{1,6}\s+/gm, "")}
+                </span>
+                {selectedId === item.id && <Check aria-hidden="true" />}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        )}
+        <div className="decision-actions">
+          <Button
+            disabled={!text}
+            onClick={() => respond(writing ? "reframe" : "accept")}
+          >
+            <Check data-icon="inline-start" />
+            Accept
+            <ChevronRight data-icon="inline-end" />
+          </Button>
+          {!writing && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReframing(true);
+                if (!draft && option)
+                  onChange({
+                    clarifyDrafts: {
+                      ...session.clarifyDrafts,
+                      [kind]: option.claimText,
+                    },
+                  });
+              }}
+            >
+              <Pencil data-icon="inline-start" />
+              Edit
+            </Button>
+          )}
+          {reframing && (
+            <Button variant="ghost" onClick={() => setReframing(false)}>
+              Cancel
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            disabled={!text}
+            onClick={() => respond("reject")}
+          >
+            <X data-icon="inline-start" />
+            Reject
+          </Button>
+        </div>
+        {turn.response?.type === "reject" && (
+          <p role="status" className="inline-feedback">
+            Rejected. Edit the wording or choose another proposal.
+          </p>
+        )}
+        <details className="source-reference">
+          <summary>
+            <FileText aria-hidden="true" />
+            Source notes
+          </summary>
+          <div>{session.rawCapture}</div>
+        </details>
+        <div className="decision-navigation">
+          <Button variant="ghost" onClick={onBack}>
+            <ArrowLeft data-icon="inline-start" />
+            Notes
+          </Button>
+          <span>
+            {
+              session.claims.filter((claim) => claim.status === "accepted")
+                .length
+            }{" "}
+            / 6 accepted
+          </span>
+          <div className="inline-actions">
+            <IconAction
+              label="Previous decision"
+              icon={ChevronLeft}
+              disabled={index === 0}
+              onClick={() => move(index - 1)}
+            />
+            <IconAction
+              label="Next decision"
+              icon={ChevronRight}
+              disabled={index === session.clarifyTurns.length - 1}
+              onClick={() => move(index + 1)}
+            />
+            <Button variant="ghost" onClick={onFinish}>
+              Review
+            </Button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }

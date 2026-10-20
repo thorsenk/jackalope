@@ -1,8 +1,101 @@
 "use client";
-import {Button} from "@/components/ui/button";
-import {lockGateStatus,isLockReady} from "@/lib/storage";
-import type {WorkshopSession} from "@/lib/types";
-export function LockStage({session,onChange,onBack,onLock}:{session:WorkshopSession;onChange:(patch:Partial<WorkshopSession>)=>void;onBack:()=>void;onLock:()=>void}){
- const gates=lockGateStatus(session.claims);
- return <section><div className="capture-heading"><div><p className="nt-label">Step 03 · Review & approve</p><h2>Is this the brief you want to run?</h2><p>Review your accepted decisions and address open concerns before approval.</p></div></div>{gates.map(g=><article className="review-row" key={g.kind}><div className="review-gate"><h3>{g.label}</h3><span>{g.met?"Accepted":"Needs a decision"}</span></div><p>{g.claim?.text??"Return to Clarify to record this decision."}</p></article>)}<section className="concern-review"><h3>Open concerns · {session.concerns.length}</h3><p>Resolve a concern when it has been addressed, or explicitly carry it into the handoff as an acknowledged open question.</p>{session.concerns.map((c,i)=><article className="review-row" key={c}><p>{c}</p><Button size="sm" onClick={()=>onChange({concerns:session.concerns.filter(x=>x!==c),resolvedConcerns:[...(session.resolvedConcerns??[]),c]})}>Mark resolved</Button><Button size="sm" variant="outline" onClick={()=>onChange({concerns:session.concerns.filter(x=>x!==c),deferredConcerns:[...session.deferredConcerns,c]})} aria-label={`Carry concern ${i+1} into handoff`}>Carry into handoff</Button></article>)}</section>{session.deferredConcerns.length>0&&<section className="review-row"><h3>Carried into handoff · {session.deferredConcerns.length}</h3>{session.deferredConcerns.map(c=><div key={c}><p>{c}</p><Button variant="outline" size="sm" onClick={()=>onChange({deferredConcerns:session.deferredConcerns.filter(x=>x!==c),concerns:[...session.concerns,c]})}>Reopen concern</Button></div>)}</section>}{(session.resolvedConcerns??[]).length>0&&<details className="review-row"><summary>Resolved concerns · {session.resolvedConcerns?.length}</summary>{session.resolvedConcerns?.map(c=><div key={c}><p>{c}</p><Button variant="outline" size="sm" onClick={()=>onChange({resolvedConcerns:session.resolvedConcerns?.filter(x=>x!==c),concerns:[...session.concerns,c]})}>Reopen concern</Button></div>)}</details>}<div className="stage-action-bar"><div><strong>{isLockReady(session.claims,session)?"Ready for your approval":"Review is still in progress"}</strong><p>Approval records the brief. It does not send anything to another person.</p></div><Button disabled={!isLockReady(session.claims,session)} onClick={onLock}>Approve & prepare handoff</Button></div><div className="stage-buttons"><Button variant="outline" onClick={onBack}>Back to Clarify</Button></div></section>;
+
+import {
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  Circle,
+  ShieldCheck,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { lockGateStatus, isLockReady } from "@/lib/storage";
+import type { WorkshopSession } from "@/lib/types";
+import { ConcernsPanel } from "./concerns-panel";
+import { HelpTip, StageFooter } from "./workshop-controls";
+
+export function LockStage({
+  session,
+  onChange,
+  onBack,
+  onLock,
+}: {
+  session: WorkshopSession;
+  onChange: (patch: Partial<WorkshopSession>) => void;
+  onBack: () => void;
+  onLock: () => void;
+}) {
+  const gates = lockGateStatus(session.claims);
+  const ready = isLockReady(session.claims, session);
+  const accepted = gates.filter((gate) => gate.met).length;
+  return (
+    <div className="review-workspace">
+      <header className="section-heading">
+        <div>
+          <p className="eyebrow">Review</p>
+          <h2>Check the brief.</h2>
+        </div>
+        <HelpTip label="About approval">
+          Approval records this brief, not company policy. It does not send or
+          publish anything. Changes require another review.
+        </HelpTip>
+      </header>
+      <div className="review-grid">
+        <section className="decision-checklist" aria-label="Brief decisions">
+          <div className="panel-toolbar">
+            <h2>
+              <CheckCircle2 aria-hidden="true" />
+              Decisions
+            </h2>
+            <span>
+              {accepted} / {gates.length}
+            </span>
+          </div>
+          {gates.map((gate) => (
+            <article className="review-decision" key={gate.kind}>
+              <div className={gate.met ? "gate-icon accepted" : "gate-icon"}>
+                {gate.met ? (
+                  <Check aria-label="Accepted" />
+                ) : (
+                  <Circle aria-label="Missing decision" />
+                )}
+              </div>
+              <div>
+                <h3>{gate.label}</h3>
+                <p>
+                  {gate.claim?.text.replace(/^#{1,6}\s+/gm, "") ??
+                    "Needs a decision."}
+                </p>
+              </div>
+            </article>
+          ))}
+        </section>
+        <ConcernsPanel session={session} onChange={onChange} review />
+      </div>
+      <StageFooter
+        onContinue={onLock}
+        disabled={!ready}
+        label="Approve brief"
+        icon={ShieldCheck}
+      >
+        <Button variant="ghost" onClick={onBack}>
+          <ArrowLeft data-icon="inline-start" />
+          Decisions
+        </Button>
+        <span>
+          {ready
+            ? "Ready for your approval"
+            : [
+                accepted < gates.length
+                  ? `${gates.length - accepted} decisions needed`
+                  : "",
+                session.concerns.length
+                  ? `${session.concerns.length} open concern${session.concerns.length === 1 ? "" : "s"}`
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+        </span>
+      </StageFooter>
+    </div>
+  );
 }

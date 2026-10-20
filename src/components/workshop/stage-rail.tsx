@@ -1,4 +1,45 @@
 "use client";
-import {STAGE_LABELS,STAGE_ORDER,type Stage} from "@/lib/types";
-const hints:Record<Stage,string>={capture:"Collect ideas & concerns",clarify:"Make the key decisions",lock:"Review & approve",handoff:"Export the brief"};
-export function StageRail({stage,onSelect,allowUpTo}:{stage:Stage;onSelect?:(s:Stage)=>void;allowUpTo?:Stage}){const max=STAGE_ORDER.indexOf(allowUpTo??stage);return <nav className="workflow-rail" aria-label="Workshop steps"><ol>{STAGE_ORDER.map((s,i)=><li key={s}><button type="button" disabled={i>max||!onSelect} aria-current={s===stage?"step":undefined} onClick={()=>onSelect?.(s)}><span className="step-number">{String(i+1).padStart(2,"0")}</span><span><strong>{STAGE_LABELS[s]}</strong><small>{hints[s]}</small></span></button></li>)}</ol></nav>;}
+
+import { FileText, GitBranch, ClipboardCheck, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { STAGE_LABELS, STAGE_ORDER, type Stage } from "@/lib/types";
+const icons = {
+  capture: FileText,
+  clarify: GitBranch,
+  lock: ClipboardCheck,
+  handoff: Send,
+};
+
+export function StageRail({
+  stage,
+  onSelect,
+  allowUpTo,
+}: {
+  stage: Stage;
+  onSelect?: (stage: Stage) => void;
+  allowUpTo?: Stage;
+}) {
+  const max = STAGE_ORDER.indexOf(allowUpTo ?? stage);
+  return (
+    <nav className="workflow-rail" aria-label="Workshop steps">
+      <ol>
+        {STAGE_ORDER.map((step, index) => {
+          const Icon = icons[step];
+          return (
+            <li key={step}>
+              <Button
+                variant="ghost"
+                disabled={index > max || !onSelect}
+                aria-current={step === stage ? "step" : undefined}
+                onClick={() => onSelect?.(step)}
+              >
+                <Icon aria-hidden="true" />
+                <span>{STAGE_LABELS[step]}</span>
+              </Button>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
