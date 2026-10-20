@@ -51,12 +51,11 @@ export function ClarifyStage({
       session.clarifyDrafts?.[kind] || turn?.response?.type === "reframe",
     ),
   );
-  const draft =
-    session.clarifyDrafts?.[kind] ??
-    session.claims.find(
-      (claim) => claim.kind === kind && claim.status === "accepted",
-    )?.text ??
-    "";
+  const acceptedClaim = session.claims.find(
+    (claim) => claim.kind === kind && claim.status === "accepted",
+  );
+  const hasPendingDraft = Boolean(session.clarifyDrafts?.[kind]?.trim());
+  const draft = session.clarifyDrafts?.[kind] ?? acceptedClaim?.text ?? "";
   const selectedId =
     selected ??
     (turn?.response?.type === "accept" ? (turn.response.optionId ?? "") : "");
@@ -213,7 +212,9 @@ export function ClarifyStage({
         )}
         <div className="decision-actions">
           <Button
-            disabled={!text}
+            disabled={
+              !text || (!hasPendingDraft && text === acceptedClaim?.text)
+            }
             onClick={() => respond(writing ? "reframe" : "accept")}
           >
             <Check data-icon="inline-start" />
@@ -265,9 +266,14 @@ export function ClarifyStage({
             <ChevronRight data-icon="inline-end" />
           </Button>
         </div>
-        {writing && draft.trim() && (
+        {writing && hasPendingDraft && (
           <p role="status" className="inline-feedback">
             Draft saved. It remains unaccepted until you choose Accept wording.
+          </p>
+        )}
+        {writing && !hasPendingDraft && text === acceptedClaim?.text && (
+          <p className="inline-feedback">
+            Accepted wording. Editing creates a new draft for review.
           </p>
         )}
         {turn.response?.type === "reject" && (
