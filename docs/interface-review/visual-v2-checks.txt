@@ -1,0 +1,71 @@
+$ npm run lint
+
+> jackalope@0.1.0 lint
+> eslint
+
+
+Exit: 0
+
+$ npm test
+
+> jackalope@0.1.0 test
+> node --test tests/*.test.cjs
+
+✔ workshop backup roundtrip preserves full source and decision state (4.078ms)
+✔ separate draft storage and storage failure are explicit (0.198542ms)
+✔ markdown has real line breaks and includes preserved status/source (0.139ms)
+✔ full concerns survive and legacy text is recovered only on unique exact match (0.242667ms)
+✔ custom clarification proposals use captured wording, never unrelated sample assumptions (0.378625ms)
+✔ Cornell section identities survive insertion and reordering, and old positional cues migrate (0.188375ms)
+✔ backup validation rejects unsafe nested optional fields and preserves approval snapshot (0.171458ms)
+✔ reading projection preserves full paragraph text and headings (0.126208ms)
+✔ reading projection does not treat uppercase words within prose as headings (0.067125ms)
+✔ concern dispositions are reversible without touching source or decisions (2.414333ms)
+✔ approval requires all categories and open concerns remain blocking (0.21325ms)
+✔ replacing a decision retains its earlier wording without duplicate active answers (3.62425ms)
+✔ decision display removes duplicate source headings without altering stored wording (0.224125ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 226.855125
+
+Exit: 0
+
+$ npx tsc --noEmit
+
+Exit: 0
+
+$ npm run build
+
+> jackalope@0.1.0 build
+> next build
+
+▲ Next.js 16.3.4 (Turbopack)
+✓ Running next.config.ts took 54ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 1465ms
+  Running TypeScript ...
+  Finished TypeScript in 1795ms ...
+  Collecting page data using 5 workers ...
+  Generating static pages using 5 workers (0/4) ...
+  Generating static pages using 5 workers (1/4) 
+  Generating static pages using 5 workers (2/4) 
+  Generating static pages using 5 workers (3/4) 
+✓ Generating static pages using 5 workers (4/4) in 277ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+└ ○ /cornell
+
+
+○  (Static)  prerendered as static content
+
+
+Exit: 0

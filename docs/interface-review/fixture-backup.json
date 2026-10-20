@@ -1,0 +1,171 @@
+{
+  "id": "ws_rdli7pv",
+  "title": "A clearer project brief",
+  "createdAt": "2026-10-20T16:44:32.608Z",
+  "updatedAt": "2026-10-20T16:46:57.352Z",
+  "stage": "handoff",
+  "rawCapture": "## Outcome\nPeople need UPDATED wording B for a clear project brief.\n\n## Feel\nThe visual direction should be calm and easy to scan.\n\n## Constraints\nWe must preserve the original source and decisions.\n\n## Boundaries\nNon-goal: building a client portal.\n\n## Language\nA brief means the decisions needed to start work.\n\n## Authority\nAuthorize local drafting; review public actions.",
+  "concerns": [],
+  "deferredConcerns": [
+    "Keep the original notes intact."
+  ],
+  "clarifyIndex": 5,
+  "clarifyTurns": [
+    {
+      "id": "q_4221z64",
+      "prompt": "Who is this for, and what outcome matters?",
+      "facilitation": "Working from “A clearer project brief”. Captured wording is a starting proposal, not an accepted decision.",
+      "options": [
+        {
+          "id": "capture-excerpt",
+          "label": "Start from your captured wording",
+          "claimKind": "who_outcome",
+          "claimText": "## Outcome\nPeople need UPDATED wording B for a clear project brief."
+        }
+      ],
+      "response": {
+        "type": "reframe",
+        "optionId": "capture-excerpt",
+        "reframedText": "People need one clear place to shape a project before building it."
+      }
+    },
+    {
+      "id": "q_d2mjvx6",
+      "prompt": "What should the experience look and feel like?",
+      "facilitation": "Working from “A clearer project brief”. Captured wording is a starting proposal, not an accepted decision.",
+      "options": [
+        {
+          "id": "capture-excerpt",
+          "label": "Start from your captured wording",
+          "claimKind": "taste_bar",
+          "claimText": "## Feel\nThe visual direction should be calm and easy to scan."
+        }
+      ],
+      "response": {
+        "type": "accept",
+        "optionId": "capture-excerpt"
+      }
+    },
+    {
+      "id": "q_ldty76a",
+      "prompt": "What must the build respect?",
+      "facilitation": "Working from “A clearer project brief”. Captured wording is a starting proposal, not an accepted decision.",
+      "options": [
+        {
+          "id": "capture-excerpt",
+          "label": "Start from your captured wording",
+          "claimKind": "hard_constraint",
+          "claimText": "## Constraints\nWe must preserve the original source and decisions."
+        }
+      ],
+      "response": {
+        "type": "accept",
+        "optionId": "capture-excerpt"
+      }
+    },
+    {
+      "id": "q_hyuyqk3",
+      "prompt": "Are there genuine exclusions or boundaries to record?",
+      "facilitation": "Working from “A clearer project brief”. Captured wording is a starting proposal, not an accepted decision.",
+      "options": [
+        {
+          "id": "capture-excerpt",
+          "label": "Start from your captured wording",
+          "claimKind": "non_goal",
+          "claimText": "## Boundaries\nNon-goal: building a client portal."
+        }
+      ],
+      "response": {
+        "type": "accept",
+        "optionId": "capture-excerpt"
+      }
+    },
+    {
+      "id": "q_clp43id",
+      "prompt": "Which terms need a shared meaning?",
+      "facilitation": "Working from “A clearer project brief”. Captured wording is a starting proposal, not an accepted decision.",
+      "options": [
+        {
+          "id": "capture-excerpt",
+          "label": "Start from your captured wording",
+          "claimKind": "shared_term",
+          "claimText": "## Language\nA brief means the decisions needed to start work."
+        }
+      ],
+      "response": {
+        "type": "accept",
+        "optionId": "capture-excerpt"
+      }
+    },
+    {
+      "id": "q_u7lu5uk",
+      "prompt": "What can the team do independently, and what needs review?",
+      "facilitation": "Working from “A clearer project brief”. Captured wording is a starting proposal, not an accepted decision.",
+      "options": [
+        {
+          "id": "capture-excerpt",
+          "label": "Start from your captured wording",
+          "claimKind": "authorization",
+          "claimText": "## Authority\nAuthorize local drafting; review public actions."
+        }
+      ],
+      "response": {
+        "type": "accept",
+        "optionId": "capture-excerpt"
+      }
+    }
+  ],
+  "claims": [
+    {
+      "id": "decision-who_outcome-1792514799510",
+      "kind": "who_outcome",
+      "text": "## Outcome\nPeople need UPDATED wording B for a clear project brief.",
+      "status": "reframed"
+    },
+    {
+      "id": "decision-who_outcome-1792514805403",
+      "kind": "who_outcome",
+      "text": "People need one clear place to shape a project before building it.",
+      "status": "accepted",
+      "originalText": "## Outcome\nPeople need UPDATED wording B for a clear project brief."
+    },
+    {
+      "id": "decision-taste_bar-1792514805676",
+      "kind": "taste_bar",
+      "text": "## Feel\nThe visual direction should be calm and easy to scan.",
+      "status": "accepted"
+    },
+    {
+      "id": "decision-hard_constraint-1792514805911",
+      "kind": "hard_constraint",
+      "text": "## Constraints\nWe must preserve the original source and decisions.",
+      "status": "accepted"
+    },
+    {
+      "id": "decision-non_goal-1792514806179",
+      "kind": "non_goal",
+      "text": "## Boundaries\nNon-goal: building a client portal.",
+      "status": "accepted"
+    },
+    {
+      "id": "decision-shared_term-1792514806410",
+      "kind": "shared_term",
+      "text": "## Language\nA brief means the decisions needed to start work.",
+      "status": "accepted"
+    },
+    {
+      "id": "decision-authorization-1792514806689",
+      "kind": "authorization",
+      "text": "## Authority\nAuthorize local drafting; review public actions.",
+      "status": "accepted"
+    }
+  ],
+  "handoffStatus": "exported",
+  "resolvedConcerns": [],
+  "removedConcerns": [],
+  "reviewedSections": [],
+  "lockedAt": "2026-10-20T16:46:57.340Z",
+  "clarifyDrafts": {
+    "who_outcome": "People need one clear place to shape a project before building it."
+  }
+}

@@ -1,9 +1,10 @@
-import {parseWorkshopBackup} from "./backup";
-import type {
-  Claim,
-  ClaimKind,
-  WorkshopSession,
-} from "@/lib/types";
+import {
+  positioningSource,
+  currentPositioningReview,
+  positioningStatus,
+} from "./positioning";
+import { parseWorkshopBackup } from "./backup";
+import type { Claim, ClaimKind, WorkshopSession } from "@/lib/types";
 import { CLAIM_KIND_LABELS, LOCK_GATE_KINDS } from "@/lib/types";
 
 const STORAGE_KEY = "jackalope.workshop.v1";
@@ -28,13 +29,18 @@ export function concernsResolvedForLock(session: WorkshopSession): boolean {
   return openConcerns(session).length === 0;
 }
 
-export function saveSession(session: WorkshopSession, key = STORAGE_KEY): boolean {
+export function saveSession(
+  session: WorkshopSession,
+  key = STORAGE_KEY,
+): boolean {
   if (typeof window === "undefined") return false;
   try {
     const next = { ...session, updatedAt: new Date().toISOString() };
     localStorage.setItem(key, JSON.stringify(next));
     return true;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 export function clearSession(key = STORAGE_KEY): void {
@@ -68,13 +74,41 @@ export function lockGateStatus(claims: Claim[]): {
 
 export function isLockReady(
   claims: Claim[],
-  session?: Pick<WorkshopSession, "concerns">,
+  session?: Pick<WorkshopSession, "concerns"> &
+    Partial<
+      Pick<
+        WorkshopSession,
+        "clarifyDrafts" | "rawCapture" | "positioningReviews"
+      >
+    >,
 ): boolean {
+  if (typeof session?.rawCapture === "string") {
+    const source = positioningSource(session.rawCapture);
+    if (source)
+      return (
+        positioningStatus(
+          source,
+          currentPositioningReview({
+            rawCapture: session.rawCapture,
+            positioningReviews: session.positioningReviews,
+          }),
+        ).ready && session.concerns.length === 0
+      );
+  }
   const gateOk = lockGateStatus(claims).every((g) => g.met);
   if (!session) return gateOk;
-  return gateOk && session.concerns.length === 0;
+  return (
+    gateOk &&
+    session.concerns.length === 0 &&
+    !Object.values(session.clarifyDrafts ?? {}).some((text) => text?.trim())
+  );
 }
 
 export function claimsForKind(claims: Claim[], kind: ClaimKind): Claim[] {
   return claims.filter((c) => c.kind === kind);
+}
+
+/** Export status is derived from approval evidence, never just a stored label. */
+export function isBriefApproved(session: WorkshopSession): boolean {
+  return Boolean(session.lockedAt) && isLockReady(session.claims, session);
 }

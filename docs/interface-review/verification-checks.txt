@@ -1,0 +1,70 @@
+$ npm run lint
+
+> jackalope@0.1.0 lint
+> eslint
+
+
+Exit: 0
+
+$ npm test
+
+> jackalope@0.1.0 test
+> node --test tests/*.test.cjs
+
+✔ workshop backup roundtrip preserves full source and decision state (5.904541ms)
+✔ separate draft storage and storage failure are explicit (0.20175ms)
+✔ markdown has real line breaks and includes preserved status/source (0.144708ms)
+✔ full concerns survive and legacy text is recovered only on unique exact match (0.260208ms)
+✔ custom clarification proposals use captured wording, never unrelated sample assumptions (0.399708ms)
+✔ Cornell section identities survive insertion and reordering, and old positional cues migrate (0.208042ms)
+✔ backup validation rejects unsafe nested optional fields and preserves approval snapshot (0.183458ms)
+✔ reading projection preserves full paragraph text and headings (0.125708ms)
+✔ reading projection does not treat uppercase words within prose as headings (0.071167ms)
+✔ concern dispositions are reversible without touching source or decisions (3.856375ms)
+✔ approval requires all categories and open concerns remain blocking (0.280042ms)
+✔ replacing a decision retains its earlier wording without duplicate active answers (4.145625ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 250.6585
+
+Exit: 0
+
+$ npx tsc --noEmit
+
+Exit: 0
+
+$ npm run build
+
+> jackalope@0.1.0 build
+> next build
+
+▲ Next.js 16.3.4 (Turbopack)
+✓ Running next.config.ts took 67ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 1464ms
+  Running TypeScript ...
+  Finished TypeScript in 1649ms ...
+  Collecting page data using 5 workers ...
+  Generating static pages using 5 workers (0/4) ...
+  Generating static pages using 5 workers (1/4) 
+  Generating static pages using 5 workers (2/4) 
+  Generating static pages using 5 workers (3/4) 
+✓ Generating static pages using 5 workers (4/4) in 289ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+└ ○ /cornell
+
+
+○  (Static)  prerendered as static content
+
+
+Exit: 0

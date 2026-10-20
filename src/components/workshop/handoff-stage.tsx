@@ -1,15 +1,45 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import Markdown from "react-markdown";
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  Download,
+  FileDown,
+  FileText,
+  MoreHorizontal,
+  Plus,
+  ShieldCheck,
+  Pencil,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ClaimRow } from "@/components/workshop/claim-row";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  CLAIM_KIND_LABELS,
+  LOCK_GATE_KINDS,
+  type WorkshopSession,
+} from "@/lib/types";
 import {
   briefFilename,
   briefToMarkdown,
   copyText,
   downloadMarkdown,
+  downloadBackup,
 } from "@/lib/export";
-import type { WorkshopSession } from "@/lib/types";
+import { isBriefApproved } from "@/lib/storage";
+import { decisionTextForDisplay } from "@/lib/decisions";
+import { positioningSource } from "@/lib/positioning";
+import { PositioningSummary } from "./positioning-summary";
+import { SourceReference } from "./source-reference";
 
 export function HandoffStage({
   session,
@@ -22,112 +52,238 @@ export function HandoffStage({
   onBack: () => void;
   onReset: () => void;
 }) {
-  const markdown = useMemo(() => briefToMarkdown(session), [session]);
   const [copyState, setCopyState] = useState<"idle" | "ok" | "fail">("idle");
-
-  const accepted = session.claims.filter((c) => c.status === "accepted");
-  const proposed = session.claims.filter((c) => c.status === "proposed");
-
-  async function handleCopy() {
-    const ok = await copyText(markdown);
-    setCopyState(ok ? "ok" : "fail");
-    if (ok) {
-      onChange({ handoffStatus: "exported" });
-      window.setTimeout(() => setCopyState("idle"), 2000);
+  const positioning = positioningSource(session.rawCapture);
+  const markdown = briefToMarkdown(session);
+  const [copiedMarkdown, setCopiedMarkdown] = useState("");
+  const copied = copyState === "ok" && copiedMarkdown === markdown;
+  const history = session.claims.filter(
+    (claim) => claim.status === "rejected" || claim.status === "reframed",
+  );
+  const approved = isBriefApproved(session);
+  const pending = LOCK_GATE_KINDS.filter(
+    (kind) =>
+      !session.claims.some(
+        (claim) => claim.kind === kind && claim.status === "accepted",
+      ),
+  );
+  async function copy() {
+    const success = await copyText(markdown);
+    setCopyState(success ? "ok" : "fail");
+    if (success) {
+      setCopiedMarkdown(markdown);
+      if (approved) onChange({ handoffStatus: "exported" });
     }
   }
-
-  function handleDownload() {
-    downloadMarkdown(briefFilename(session), markdown);
-    onChange({ handoffStatus: "exported" });
-  }
-
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-2 space-y-5 duration-200">
-      <header className="space-y-3">
-        <p className="nt-label text-[var(--nt-accent)]">
-          Hand off
-        </p>
-        <h2 className=" text-[20px] font-semibold tracking-tight font-semibold">
-          {session.title}
-        </h2>
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <span className="rounded-md border border-[var(--nt-accepted)]/35 bg-[var(--nt-accepted-soft)] px-2.5 py-1 font-mono text-[11px] tracking-wider text-[var(--nt-accepted)] uppercase">
-            Status · {session.handoffStatus}
+    <div className="export-workspace">
+      <header className="section-heading">
+        <div>
+          <p className="eyebrow">Export</p>
+          <h2>{approved ? "Your brief is ready." : "Draft preview"}</h2>
+          <p className="muted-text">
+            {approved
+              ? positioning
+                ? "Your review record. Final positioning still needs your decision."
+                : "Download or copy your approved brief."
+              : "Not approved. Includes open questions and draft wording."}
+          </p>
+        </div>
+        <Badge variant="secondary">
+          {approved ? (
+            <ShieldCheck data-icon="inline-start" />
+          ) : (
+            <Pencil data-icon="inline-start" />
+          )}
+          {approved ? (positioning ? "Confirmed review" : "Approved") : "Draft"}
+        </Badge>
+      </header>
+      <div className="export-toolbar">
+        <div className="inline-actions">
+          <Button
+            onClick={() => {
+              downloadMarkdown(briefFilename(session), markdown);
+              if (approved) onChange({ handoffStatus: "exported" });
+            }}
+          >
+            <FileDown data-icon="inline-start" />
+            {approved ? "Download brief" : "Download draft"}
+          </Button>
+          <Button variant="outline" onClick={() => void copy()}>
+            {copied ? (
+              <Check data-icon="inline-start" />
+            ) : (
+              <Copy data-icon="inline-start" />
+            )}
+            {copied ? "Copied" : approved ? "Copy" : "Copy draft"}
+          </Button>
+          <span className="sr-only" role="status">
+            {copied
+              ? approved
+                ? "Brief copied."
+                : "Draft copied."
+              : copyState === "fail"
+                ? "Copy failed. Download the brief instead."
+                : ""}
           </span>
+        </div>
+        <div className="inline-actions">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Export actions"
+                />
+              }
+            >
+              <MoreHorizontal aria-hidden="true" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => downloadBackup(session)}>
+                  <Download />
+                  Download backup
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Start a new workshop? Download a backup first to keep this one.",
+                      )
+                    )
+                      onReset();
+                  }}
+                >
+                  <Plus />
+                  New workshop
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      {copyState === "fail" && (
+        <p role="alert">Copy failed. Download a copy instead.</p>
+      )}
+      <article className="brief-document">
+        <div className="brief-heading">
+          <FileText aria-hidden="true" />
+          <h2>{session.title}</h2>
           {session.lockedAt && (
-            <span className="text-muted-foreground">
-              Locked {new Date(session.lockedAt).toLocaleString()}
-            </span>
+            <time dateTime={session.lockedAt}>
+              {new Date(session.lockedAt).toLocaleString()}
+            </time>
           )}
         </div>
-        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          A coherent, finishable brief — not an agent-shaped dump. Proposed vs
-          accepted stays explicit so the factory doesn’t re-interpret soft language.
-        </p>
-        <p className="rounded-[var(--nt-radius-control)] border border-[var(--nt-border)] bg-[var(--nt-surface-field)] px-3 py-2 text-[13px] text-[var(--nt-fg-body)]">
-          Local export — no recipient in v1. Copy or download the markdown; you
-          deliver it yourself.
-        </p>
-      </header>
-
-      <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
-        <div className="space-y-6">
-          <section className="space-y-3">
-            <h3 className="font-mono text-[11px] tracking-[0.16em] text-[var(--nt-accepted)] uppercase">
-              Accepted
-            </h3>
-            <div className="space-y-2">
-              {accepted.map((c) => (
-                <ClaimRow key={c.id} claim={c} compact />
+        {positioning ? (
+          <PositioningSummary session={session} source={positioning} />
+        ) : (
+          <>
+            {pending.length > 0 && (
+              <section className="pending-decisions">
+                <h3>Undecided · {pending.length}</h3>
+                <p>
+                  {pending.map((kind) => CLAIM_KIND_LABELS[kind]).join(" · ")}
+                </p>
+              </section>
+            )}
+            {LOCK_GATE_KINDS.filter((kind) =>
+              session.clarifyDrafts?.[kind]?.trim(),
+            ).map((kind) => (
+              <section key={`draft-${kind}`}>
+                <div className="brief-section-heading">
+                  <h3>{CLAIM_KIND_LABELS[kind]}</h3>
+                  <Badge variant="outline">Draft wording</Badge>
+                </div>
+                <div className="markdown-content">
+                  <Markdown>{session.clarifyDrafts?.[kind]}</Markdown>
+                </div>
+              </section>
+            ))}
+            {session.claims
+              .filter(
+                (claim) =>
+                  claim.status === "accepted" || claim.status === "proposed",
+              )
+              .map((claim) => (
+                <section key={claim.id}>
+                  <div className="brief-section-heading">
+                    <h3>{CLAIM_KIND_LABELS[claim.kind]}</h3>
+                    {claim.status === "accepted" ? (
+                      <Check aria-label="Accepted" />
+                    ) : (
+                      <Badge variant="outline">Proposed</Badge>
+                    )}
+                  </div>
+                  <div className="markdown-content">
+                    <Markdown>
+                      {decisionTextForDisplay(claim.text, claim.kind)}
+                    </Markdown>
+                  </div>
+                </section>
+              ))}
+          </>
+        )}
+        {[
+          { title: "Open concerns", values: session.concerns },
+          { title: "Carried forward", values: session.deferredConcerns },
+          { title: "Resolved", values: session.resolvedConcerns ?? [] },
+        ]
+          .filter((group) => group.values.length)
+          .map((group) => (
+            <section key={group.title}>
+              <h3>{group.title}</h3>
+              <ul>
+                {group.values.map((text) => (
+                  <li key={text}>{text}</li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        {history.length > 0 && (
+          <details className="source-reference">
+            <summary>
+              {positioning
+                ? "Earlier general-workshop history"
+                : "Decision history"}{" "}
+              ({history.length})
+            </summary>
+            <div>
+              {history.map((claim) => (
+                <section key={claim.id}>
+                  <h3>
+                    {CLAIM_KIND_LABELS[claim.kind]} · {claim.status}
+                  </h3>
+                  <p>{claim.text}</p>
+                </section>
               ))}
             </div>
-          </section>
-          {proposed.length > 0 && (
-            <section className="space-y-3">
-              <h3 className="font-mono text-[11px] tracking-[0.16em] text-[var(--nt-proposed)] uppercase">
-                Still proposed
-              </h3>
-              <div className="space-y-2">
-                {proposed.map((c) => (
-                  <ClaimRow key={c.id} claim={c} compact />
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
-
-        <section className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="font-mono text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
-              Markdown brief
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" onClick={handleCopy}>
-                {copyState === "ok"
-                  ? "Copied"
-                  : copyState === "fail"
-                    ? "Copy failed"
-                    : "Copy"}
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleDownload}>
-                Download .md
-              </Button>
+          </details>
+        )}
+        <SourceReference source={session.rawCapture} label="Original notes" />
+        {(session.cornellSummary ||
+          session.cornellCues ||
+          Object.keys(session.cornellSectionCues ?? {}).length > 0) && (
+          <details className="source-reference">
+            <summary>Cornell notes</summary>
+            <div>
+              {session.cornellSummary}
+              {session.cornellCues && `\n\n${session.cornellCues}`}
+              {Object.values(session.cornellSectionCues ?? {}).map(
+                (cue) => `\n\n${cue}`,
+              )}
             </div>
-          </div>
-          <pre className="max-h-[520px] overflow-auto rounded-[var(--nt-radius-medium)] border border-border/70 bg-card/40 p-4 font-mono text-[12px] leading-relaxed whitespace-pre-wrap text-muted-foreground">
-            {markdown}
-          </pre>
-        </section>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3 border-t border-border/60 pt-6">
-        <Button variant="outline" onClick={onBack}>
-          Back to Lock
+          </details>
+        )}
+      </article>
+      <div className="export-bottom">
+        <Button variant="ghost" onClick={onBack}>
+          <ArrowLeft data-icon="inline-start" />
+          Review
         </Button>
-        <Button variant="secondary" onClick={onReset}>
-          Start new workshop
-        </Button>
+        <span className="muted-text">Local export · No automatic delivery</span>
       </div>
     </div>
   );
