@@ -49,3 +49,7 @@ Independent visual inspection of the six initial correction artifacts found mean
 The refreshed phone decision artifact was inspected independently after its footer correction. No material findings remained in the targeted visual/requirements review or the separate standards review. This is evidence against the stated criteria; it is not Kyle's design acceptance. The earlier functional verification must still not be used as a substitute for visual judgment.
 
 The original empty workshop was restored after synthetic runtime tests. No real company positioning or project decisions were approved. The original Vercel deployment remains unchanged; this iteration updates the same local preview and draft pull request.
+
+## Short desktop verification
+
+The final production build was also inspected at 1280 by 720. A height-specific spacing rule reduces padding and editor depth without shrinking the type scale. The complete Continue control ends at 707.5px within the 720px viewport. The resulting clean starting state is preserved in `visual-v2-final-desktop.png`. The production build and type checking passed after this spacing adjustment; the thirteen passing regression tests cover the unchanged application/data logic.

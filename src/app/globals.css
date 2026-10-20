@@ -1234,6 +1234,46 @@ p {
     flex-wrap: wrap;
   }
 }
+/* Short desktop windows keep readable type; reduce spacing and editor depth instead. */
+@media (min-width: 801px) and (max-height: 800px) {
+  .app-topbar-inner {
+    padding-block: 12px;
+  }
+  .app-main {
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+  .workshop-app {
+    gap: 20px;
+  }
+  .workflow-rail [data-slot="button"] {
+    height: 60px;
+    padding-block: 10px;
+  }
+  .capture-workspace {
+    gap: 16px;
+  }
+  .panel-toolbar,
+  .document-panel .panel-toolbar,
+  .concerns-panel .panel-toolbar {
+    min-height: 64px;
+    padding-block: 12px;
+  }
+  .editor-body {
+    padding: 20px;
+  }
+  .editor-body textarea {
+    min-height: 160px;
+  }
+  .document-reading {
+    min-height: 160px;
+  }
+  .quiet-empty {
+    min-height: 0;
+    padding-block: 16px;
+    gap: 12px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
