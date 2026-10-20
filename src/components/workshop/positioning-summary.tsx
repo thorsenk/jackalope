@@ -36,10 +36,24 @@ export function PositioningSummary({
   return (
     <section className="positioning-summary">
       <h3>Rubric comparison</h3>
-      <p className="muted-text">
-        Meets · Needs work · Not sure · Not reviewed. No automatic scores or
-        winner.
-      </p>
+      <div className="rubric-legend" aria-label="Rating key">
+        <span>
+          <Check aria-hidden="true" />
+          Meets
+        </span>
+        <span>
+          <X aria-hidden="true" />
+          Needs work
+        </span>
+        <span>
+          <CircleHelp aria-hidden="true" />
+          Not sure
+        </span>
+        <span>
+          <Minus aria-hidden="true" />
+          Not reviewed
+        </span>
+      </div>
       <table className="rubric-matrix">
         <caption className="sr-only">
           Your positioning judgments by candidate and source rubric
@@ -100,7 +114,9 @@ export function PositioningSummary({
       <div className="positioning-selected">
         <h3>Wording to take forward</h3>
         <p>{review?.selectedSentence || "Undecided"}</p>
-        <p className="muted-text">{status.message}</p>
+        {review?.selectedSentence && (
+          <p className="muted-text">{status.message}</p>
+        )}
         {onEdit && (
           <Button
             variant="outline"

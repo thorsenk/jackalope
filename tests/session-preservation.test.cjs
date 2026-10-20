@@ -673,3 +673,28 @@ test("positioning confirmation needs explicit current judgments and never inheri
   });
   assert.ok(markdown.includes("Preserved synthesis"));
 });
+
+test("revised wording exports its judgments and evidence despite surrounding whitespace", () => {
+  const source = positioningLib.positioningSource(positioningFixture);
+  const review = {
+    source: positioningFixture,
+    draftSentence: "  My revision.\n",
+    selectedSentence: "My revision.",
+    assessments: [
+      {
+        sentence: "My revision.",
+        ratings: { clarity: "meets" },
+        notes: { clarity: "Reader explained it accurately." },
+      },
+    ],
+  };
+  const markdown = positioningLib.positioningMarkdown(source, review);
+  assert.ok(markdown.includes("### Own draft\n\n  My revision.\n"));
+  assert.ok(
+    markdown.includes(
+      "Clarity: Meets\n  Evidence: Reader explained it accurately.",
+    ),
+  );
+  assert.ok(markdown.includes("Wording to take forward: My revision."));
+  assert.ok(!markdown.includes("Final wording:"));
+});

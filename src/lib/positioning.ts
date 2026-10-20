@@ -192,7 +192,7 @@ export function positioningMarkdown(
           `\n\n### Earlier revised wording — not selected\n\n${item.sentence}\n\n${assessmentMarkdown(source, review, item.sentence)}`,
       )
       .join("") ?? "";
-  return `## Positioning review\n\nFinal wording: ${review?.selectedSentence || "Undecided"}\n\n${positioningStatus(source, review).message}\n\n## Candidate comparison\n\n${source.candidates.map((candidate) => `### ${candidate.label}\n\n${candidate.sentence}\n\n${assessmentMarkdown(source, review, candidate.sentence)}`).join("\n\n")}${review?.draftSentence ? `\n\n### Own draft\n\n${review.draftSentence}\n\n${assessmentMarkdown(source, review, review.draftSentence)}` : ""}${earlierWording}\n\n## Source rubric\n\n${source.rubric}`;
+  return `## Positioning review\n\nWording to take forward: ${review?.selectedSentence || "Undecided"}\n\n${positioningStatus(source, review).message}\n\n## Candidate comparison\n\n${source.candidates.map((candidate) => `### ${candidate.label}\n\n${candidate.sentence}\n\n${assessmentMarkdown(source, review, candidate.sentence)}`).join("\n\n")}${review?.draftSentence ? `\n\n### Own draft\n\n${review.draftSentence}\n\n${assessmentMarkdown(source, review, review.draftSentence.trim())}` : ""}${earlierWording}\n\n## Source rubric\n\n${source.rubric}`;
 }
 function assessmentMarkdown(
   source: PositioningSource,

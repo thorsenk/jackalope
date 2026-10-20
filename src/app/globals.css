@@ -1590,3 +1590,20 @@ p {
     height: 28px;
   }
 }
+
+.rubric-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  color: var(--muted-foreground);
+  font-size: var(--type-caption);
+}
+.rubric-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.rubric-legend svg {
+  width: 13px;
+  height: 13px;
+}
