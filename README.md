@@ -1,47 +1,46 @@
 # Jackalope
 
-**Jackalope** is NiceThings’ interactive design-thinking intake. Agents facilitate a short workshop with you. The goal is a coherent, finishable brief — not a soft, agent-shaped dump that someone has to re-interpret later.
+Jackalope turns project notes into a reviewed brief. Keep the original wording, make the important decisions, and export something useful for the next person.
 
-This is **not** classic design-thinking stage gates (Empathize → Define → Ideate → Prototype → Test). The intake follows an exploratory interview spine: one consequential call at a time, with concrete options you can accept, reject, or reframe.
+## The workflow
 
-## The thin workflow
+1. **Notes** — paste or write the starting material. Read by section, edit the source, and keep concerns alongside it.
+2. **Decisions** — see proposed wording immediately. Accept it, edit it, or reject it. Earlier wording stays in decision history when replaced.
+3. **Review** — check six decision areas. Resolve open concerns or explicitly carry them into the brief, then approve.
+4. **Export** — copy or download the brief. Changing the approved content returns it to Draft and requires another review.
 
-1. **Capture** — Dump messy intent out loud or in writing. Keep the worries. Don’t force structure yet.
-2. **Clarify** — Answer one serious question at a time. Prefer recognizing a good option over filling blank worksheets. Distinguish *proposed* from *accepted*.
-3. **Lock** — The brief is good enough to run when these are accepted: who/outcome, taste bars + hard constraints, non-goals, shared terms, and what’s authorized without Kyle.
-4. **Hand off** — Download or copy a markdown brief. Status stays visible so the factory can run without language drift.
+Common actions use Lucide icons with keyboard/focus tooltips. The concern menu provides named alternatives for touch use. Document actions contains backup download/import; export actions contains a full backup and a new-workshop action.
 
-## Public preview
+Approval applies to this workshop brief. It does not publish company positioning, send a message, or deliver work to a recipient.
 
-Lasting static preview: [https://thorsenk.github.io/jackalope/](https://thorsenk.github.io/jackalope/)
+## Saved work
+
+Sessions save in this browser. Download a JSON backup to preserve the complete source, decisions, concerns, and approval state or move them to another device. The Markdown export includes the original notes and decision history.
+
+The Cornell route keeps section questions and synthesis in a separate browser draft. On its first visit, it starts from the guided document; subsequent edits save independently.
+
+Clarification proposals are selected deterministically from source notes. The application does not currently run an artificial intelligence facilitator, authenticate users, or store work on a server.
 
 ## Run locally
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Open the URL printed in the terminal (default is `http://localhost:3000`). For a fixed port:
+Open the address printed in the terminal (default port 43127).
+
+## Verify
 
 ```bash
-npm run dev -- -p 43127
+npm test
+npm run lint
+npx tsc --noEmit
+npm run build
 ```
 
-## Try the sample
+The interface refactor's baseline findings, screenshots, and verification record are in `docs/interface-review/`.
 
-1. Open the app and click **Load sample workshop**.
-2. Skim the capture dump, keep or drop concerns, then continue to **Clarify**.
-3. For each question, accept / reject / reframe an option (reject stays on the question so you can pick another).
-4. On **Lock**, confirm every gate row is accepted, then lock.
-5. On **Hand off**, copy or download the markdown brief.
+## Interface
 
-Sessions save automatically in `localStorage` so you can refresh and resume.
-
-## Stack
-
-Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui. Client-side state only for v1 — no auth, no database.
-
-## Design system
-
-Jackalope is a NiceThings surface. Visual language comes from **`nice-things-interface` v0.1.0** (`design-system/tokens.json` → `--nt-*` CSS variables). Dark-only charcoal, thin borders, Inter, selective indigo accent `#504FB2`. Workshop-specific patterns IDS doesn’t define yet are listed in [`docs/ids-gaps.md`](docs/ids-gaps.md).
+Next.js, TypeScript, Tailwind CSS, Base UI/shadcn, and Lucide. The current charcoal/indigo interface uses the existing `nice-things-interface` token family. Application layout lives in one responsive stylesheet; reusable controls, tooltips, menus, toggles, fields, alerts, and empty states use the shared component layer.
