@@ -13,9 +13,17 @@ import {
   X,
   Clock3,
   ChevronDown,
+  MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Empty,
   EmptyHeader,
@@ -195,18 +203,55 @@ export function ConcernsPanel({
                     icon={Check}
                     onClick={() => move(text, "resolved")}
                   />
-                  {review && (
-                    <IconAction
-                      label={`Carry concern ${index + 1} into brief`}
-                      icon={Clock3}
-                      onClick={() => move(text, "deferred")}
-                    />
-                  )}
-                  <IconAction
-                    label={`Remove concern ${index + 1}`}
-                    icon={Trash2}
-                    onClick={() => move(text, "removed")}
-                  />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`More actions for concern ${index + 1}`}
+                        />
+                      }
+                    >
+                      <MoreHorizontal aria-hidden="true" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuGroup>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setEditing(text);
+                            setEditDraft(
+                              recoverConcernText(text, session.rawCapture),
+                            );
+                          }}
+                        >
+                          <Pencil />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => move(text, "resolved")}
+                        >
+                          <Check />
+                          Mark resolved
+                        </DropdownMenuItem>
+                        {review && (
+                          <DropdownMenuItem
+                            onClick={() => move(text, "deferred")}
+                          >
+                            <Clock3 />
+                            Carry into brief
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={() => move(text, "removed")}
+                        >
+                          <Trash2 />
+                          Remove
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </>
             )}
@@ -235,7 +280,6 @@ export function ConcernsPanel({
             key: "deferredConcerns",
             label: "Carried forward",
             icon: Clock3,
-            ChevronDown,
           },
           { key: "resolvedConcerns", label: "Resolved", icon: Check },
           { key: "removedConcerns", label: "Removed", icon: Trash2 },

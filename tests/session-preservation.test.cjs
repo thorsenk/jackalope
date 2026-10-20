@@ -266,3 +266,33 @@ test("approval requires all categories and open concerns remain blocking", () =>
   assert.equal(isLockReady(claims.slice(1), { concerns: [] }), false);
   assert.equal(isLockReady(claims, { concerns: ["Unresolved"] }), false);
 });
+
+test("replacing a decision retains its earlier wording without duplicate active answers", () => {
+  const { recordDecision } = require(path.join(lib, "decisions.ts"));
+  const previous = {
+    id: "old",
+    kind: "who_outcome",
+    text: "Original accepted wording",
+    status: "accepted",
+  };
+  const next = {
+    id: "new",
+    kind: "who_outcome",
+    text: "Revised accepted wording",
+    status: "accepted",
+  };
+  const result = recordDecision([previous], next);
+  assert.equal(result.length, 2);
+  assert.equal(result[0].text, previous.text);
+  assert.equal(result[0].status, "reframed");
+  assert.equal(result.filter((c) => c.status === "accepted").length, 1);
+  const rejected = recordDecision(result, {
+    id: "rejected",
+    kind: "who_outcome",
+    text: "Rejected alternative",
+    status: "rejected",
+  });
+  assert.equal(rejected.length, 3);
+  assert.equal(rejected.filter((c) => c.status === "accepted").length, 0);
+  assert.equal(previous.status, "accepted");
+});

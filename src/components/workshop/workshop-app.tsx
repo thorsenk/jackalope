@@ -187,7 +187,9 @@ export function WorkshopApp({
         stage={session.stage}
         allowUpTo={allowUpTo}
         onSelect={(s) => {
-          if (STAGE_ORDER.indexOf(s) <= maxStageIdx) go(s);
+          if (STAGE_ORDER.indexOf(s) > maxStageIdx) return;
+          if (s === "clarify" && session.stage === "capture") startClarify();
+          else go(s);
         }}
       />
 

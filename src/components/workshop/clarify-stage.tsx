@@ -18,9 +18,9 @@ import {
   CLAIM_KIND_LABELS,
   LOCK_GATE_KINDS,
   type WorkshopSession,
-  type Claim,
   type ClarifyResponse,
 } from "@/lib/types";
+import { recordDecision, type DecisionClaim } from "@/lib/decisions";
 import { HelpTip, IconAction } from "./workshop-controls";
 
 export function ClarifyStage({
@@ -76,7 +76,7 @@ export function ClarifyStage({
       optionId: option?.id,
       reframedText: writing ? text : undefined,
     };
-    const claim: Claim = {
+    const claim: DecisionClaim = {
       id: `decision-${kind}-${Date.now()}`,
       kind: option?.claimKind ?? kind,
       text,
@@ -87,12 +87,7 @@ export function ClarifyStage({
       clarifyTurns: session.clarifyTurns.map((item, itemIndex) =>
         itemIndex === index ? { ...item, response } : item,
       ),
-      claims: [
-        ...session.claims.filter(
-          (item) => !(item.kind === claim.kind && item.status === "accepted"),
-        ),
-        claim,
-      ],
+      claims: recordDecision(session.claims, claim),
       clarifyIndex:
         type === "reject"
           ? index

@@ -408,14 +408,14 @@ export function CaptureStage({
         <ConcernsPanel session={session} onChange={onChange} />
       </div>
       <StageFooter
-        disabled={session.rawCapture.trim().length <= 40}
+        disabled={session.rawCapture.trim().length === 0}
         onContinue={onContinue}
-        label="Clarify"
+        label="Continue"
       >
         <span>
-          {session.rawCapture.trim().length <= 40
-            ? "Add a few notes to begin."
-            : `${sections.length} sections · ${session.concerns.length} open concerns`}
+          {session.rawCapture.trim().length === 0
+            ? "Add notes to begin."
+            : `${sections.length} section${sections.length === 1 ? "" : "s"} · ${session.concerns.length} open concern${session.concerns.length === 1 ? "" : "s"}`}
         </span>
       </StageFooter>
     </div>
