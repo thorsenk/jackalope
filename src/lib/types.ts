@@ -54,6 +54,13 @@ export interface WorkshopSession {
   rawCapture: string;
   /** Open concerns still on the table — must resolve or defer before Lock is ready. */
   concerns: string[];
+  resolvedConcerns?: string[];
+  cornellCues?: string;
+  cornellSectionCues?: Record<string,string>;
+  reviewedSections?: string[];
+  cornellSummary?: string;
+  clarifyDrafts?: Partial<Record<ClaimKind,string>>;
+  removedConcerns?: string[];
   /** Explicitly deferred concerns (acknowledged, not blocking Lock). */
   deferredConcerns: string[];
   clarifyIndex: number;

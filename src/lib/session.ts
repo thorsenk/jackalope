@@ -255,17 +255,22 @@ export function suggestConcerns(raw: string): string[] {
     ),
   );
 
-  return worryish.slice(0, 5).map((l) => l.replace(/^[-•*]\s*/, "").slice(0, 120));
+  return worryish.slice(0, 5).map((l) => l.replace(/^[-•*]\s*/, ""));
 }
 
 export function buildClarifyFromCapture(raw: string, title: string): ClarifyTurn[] {
-  // For custom captures, reuse the sample spine but retarget prompts lightly.
-  const turns = buildSampleClarifyTurns();
-  if (!raw.trim()) return turns;
-
-  turns[0] = {
-    ...turns[0],
-    facilitation: `Working title: “${title}”. Choose the who/outcome that matches what you captured — or reframe it.`,
-  };
-  return turns;
+  if (title === SAMPLE_TITLE) return buildSampleClarifyTurns();
+  const paragraphs = raw.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  const definitions = [
+    {kind: "who_outcome", prompt: "Who is this for, and what outcome matters?", match: /household|audience|users|people|outcome/i},
+    {kind: "taste_bar", prompt: "What should the experience look and feel like?", match: /visual|typography|feel|taste|craft/i},
+    {kind: "hard_constraint", prompt: "What must the build respect?", match: /must|privacy|constraint|permission/i},
+    {kind: "non_goal", prompt: "Are there genuine exclusions or boundaries to record?", match: /non-goal|exclusion|not building/i},
+    {kind: "shared_term", prompt: "Which terms need a shared meaning?", match: /vocabulary|definition|brick|means/i},
+    {kind: "authorization", prompt: "What can the team do independently, and what needs review?", match: /authoriz|explicit.*action|review.*action/i},
+  ] as const;
+  return definitions.map(({kind,prompt,match}) => {
+    const excerpt = paragraphs.find(p => match.test(p));
+    return {id:uid("q"),prompt,facilitation:`Working from “${title}”. Captured wording is a starting proposal, not an accepted decision.`,options:excerpt?[{id:"capture-excerpt",label:"Start from your captured wording",claimKind:kind,claimText:excerpt}]:[]};
+  });
 }
