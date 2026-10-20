@@ -1,3 +1,4 @@
+import {parseWorkshopBackup} from "./backup";
 import type {
   Claim,
   ClaimKind,
@@ -7,17 +8,12 @@ import { CLAIM_KIND_LABELS, LOCK_GATE_KINDS } from "@/lib/types";
 
 const STORAGE_KEY = "jackalope.workshop.v1";
 
-export function loadSession(): WorkshopSession | null {
+export function loadSession(key = STORAGE_KEY): WorkshopSession | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as WorkshopSession;
-    return {
-      ...parsed,
-      deferredConcerns: parsed.deferredConcerns ?? [],
-      concerns: parsed.concerns ?? [],
-    };
+    return parseWorkshopBackup(JSON.parse(raw));
   } catch {
     return null;
   }
@@ -32,15 +28,18 @@ export function concernsResolvedForLock(session: WorkshopSession): boolean {
   return openConcerns(session).length === 0;
 }
 
-export function saveSession(session: WorkshopSession): void {
-  if (typeof window === "undefined") return;
-  const next = { ...session, updatedAt: new Date().toISOString() };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+export function saveSession(session: WorkshopSession, key = STORAGE_KEY): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const next = { ...session, updatedAt: new Date().toISOString() };
+    localStorage.setItem(key, JSON.stringify(next));
+    return true;
+  } catch { return false; }
 }
 
-export function clearSession(): void {
+export function clearSession(key = STORAGE_KEY): void {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(key);
 }
 
 export function acceptedByKind(
