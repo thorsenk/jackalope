@@ -33,6 +33,9 @@ export function LockStage({
 }) {
   const gates = lockGateStatus(session.claims);
   const ready = isLockReady(session.claims, session);
+  const drafts = Object.values(session.clarifyDrafts ?? {}).filter((text) =>
+    text?.trim(),
+  ).length;
   const accepted = gates.filter((gate) => gate.met).length;
   return (
     <div className="review-workspace">
@@ -69,7 +72,14 @@ export function LockStage({
               <div className="review-decision-content">
                 <h3>{gate.label}</h3>
                 {gate.claim ? (
-                  <p>{decisionTextForDisplay(gate.claim.text, gate.kind)}</p>
+                  <>
+                    <p>{decisionTextForDisplay(gate.claim.text, gate.kind)}</p>
+                    {session.clarifyDrafts?.[gate.kind]?.trim() && (
+                      <span className="muted-text">
+                        Draft revision awaiting acceptance
+                      </span>
+                    )}
+                  </>
                 ) : (
                   <span className="muted-text">
                     {session.clarifyDrafts?.[gate.kind]?.trim()
@@ -113,6 +123,9 @@ export function LockStage({
             : [
                 accepted < gates.length
                   ? `${gates.length - accepted} decisions needed`
+                  : "",
+                drafts && accepted === gates.length
+                  ? `${drafts} draft revision${drafts === 1 ? "" : "s"} to review`
                   : "",
                 session.concerns.length
                   ? `${session.concerns.length} open concern${session.concerns.length === 1 ? "" : "s"}`

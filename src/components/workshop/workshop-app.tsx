@@ -19,6 +19,7 @@ import {
   buildClarifyFromCapture,
   createEmptySession,
   createSampleSession,
+  patchWorkshopSession,
 } from "@/lib/session";
 import { clearSession, loadSession, saveSession } from "@/lib/storage";
 import type { Stage, WorkshopSession } from "@/lib/types";
@@ -72,22 +73,7 @@ export function WorkshopApp({
 
   function patch(partial: Partial<WorkshopSession>) {
     setSaved(false);
-    setSession((prev) => ({
-      ...prev,
-      ...partial,
-      ...((partial.rawCapture !== undefined ||
-        partial.claims !== undefined ||
-        partial.title !== undefined ||
-        partial.concerns !== undefined ||
-        partial.cornellSummary !== undefined ||
-        partial.cornellCues !== undefined ||
-        partial.cornellSectionCues !== undefined ||
-        partial.deferredConcerns !== undefined ||
-        partial.resolvedConcerns !== undefined) &&
-      prev.lockedAt
-        ? { lockedAt: undefined, handoffStatus: "draft" as const }
-        : {}),
-    }));
+    setSession((prev) => patchWorkshopSession(prev, partial));
   }
 
   function go(stage: Stage) {
@@ -106,7 +92,6 @@ export function WorkshopApp({
       stage: "clarify",
       clarifyTurns: turns,
       clarifyIndex: Math.min(index, Math.max(0, turns.length - 1)),
-      claims: hasResponses ? session.claims : [],
     });
   }
 
@@ -188,7 +173,8 @@ export function WorkshopApp({
         stage={session.stage}
         allowUpTo={allowUpTo}
         onSelect={(s) => {
-          if (STAGE_ORDER.indexOf(s) > maxStageIdx) return;
+          if (s === session.stage || STAGE_ORDER.indexOf(s) > maxStageIdx)
+            return;
           if (s === "clarify") startClarify();
           else go(s);
         }}

@@ -1315,19 +1315,20 @@ p {
   width: 100%;
   min-width: 0;
 }
-.outline-menu [data-slot="button"] {
+.outline-menu-trigger {
   width: 100%;
   justify-content: flex-start;
 }
-.outline-menu [data-slot="button"] > span {
+.outline-menu-trigger > span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.outline-menu [data-slot="button"] > svg:last-child {
+.outline-menu-trigger > svg:last-child {
   margin-left: auto;
 }
 .outline-menu-content {
+  min-width: min(360px, calc(100vw - 28px));
   max-width: calc(100vw - 28px);
   max-height: min(480px, 70dvh);
 }

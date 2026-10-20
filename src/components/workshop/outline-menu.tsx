@@ -28,6 +28,7 @@ export function OutlineMenu({
     <div className="outline-menu">
       <DropdownMenu>
         <DropdownMenuTrigger
+          className="outline-menu-trigger"
           render={<Button variant="outline" aria-label={label} />}
         >
           <List data-icon="inline-start" />

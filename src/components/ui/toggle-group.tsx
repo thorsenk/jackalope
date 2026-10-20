@@ -40,6 +40,7 @@ function ToggleGroup({
       data-size={size}
       data-spacing={spacing}
       data-orientation={orientation}
+      orientation={orientation}
       style={{ "--gap": spacing } as React.CSSProperties}
       className={(state) =>
         cn(

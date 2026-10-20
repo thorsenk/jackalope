@@ -20,7 +20,7 @@ import {
   type ClarifyResponse,
 } from "@/lib/types";
 import {
-  recordDecision,
+  recordWorkshopDecision,
   decisionTextForDisplay,
   type DecisionClaim,
 } from "@/lib/decisions";
@@ -94,7 +94,7 @@ export function ClarifyStage({
       clarifyTurns: session.clarifyTurns.map((item, itemIndex) =>
         itemIndex === index ? { ...item, response } : item,
       ),
-      claims: recordDecision(session.claims, claim),
+      ...recordWorkshopDecision(session, claim),
       clarifyIndex:
         type === "reject"
           ? index

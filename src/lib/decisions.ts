@@ -1,4 +1,4 @@
-import type { Claim, ClaimKind } from "./types";
+import type { Claim, ClaimKind, WorkshopSession } from "./types";
 
 export type DecisionClaim = Omit<Claim, "status"> & {
   status: "accepted" | "rejected";
@@ -41,4 +41,29 @@ export function decisionTextForDisplay(text: string, kind: ClaimKind): string {
       ? text.slice(heading[0].length)
       : text;
   return (body.trim() ? body : text).replace(/^#{1,6}[ \t]+/gm, "");
+}
+
+/** Settle the current draft and preserve alternate wording in decision history. */
+export function recordWorkshopDecision(
+  session: Pick<WorkshopSession, "claims" | "clarifyDrafts">,
+  next: DecisionClaim,
+): Pick<WorkshopSession, "claims" | "clarifyDrafts"> {
+  const drafts = { ...session.clarifyDrafts };
+  let claims = session.claims;
+  const draft = drafts[next.kind];
+  if (next.status === "accepted") {
+    if (draft?.trim() && draft.trim() !== next.text.trim()) {
+      claims = [
+        ...claims,
+        {
+          id: `${next.id}-draft`,
+          kind: next.kind,
+          text: draft,
+          status: "reframed",
+        },
+      ];
+    }
+    delete drafts[next.kind];
+  }
+  return { claims: recordDecision(claims, next), clarifyDrafts: drafts };
 }

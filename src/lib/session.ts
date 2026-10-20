@@ -372,3 +372,34 @@ export function buildClarifyFromCapture(
     };
   });
 }
+
+/** Navigation preserves approval; changes to exported content require another review. */
+export function patchWorkshopSession(
+  previous: WorkshopSession,
+  partial: Partial<WorkshopSession>,
+): WorkshopSession {
+  const contentKeys = [
+    "rawCapture",
+    "claims",
+    "title",
+    "concerns",
+    "cornellSummary",
+    "cornellCues",
+    "cornellSectionCues",
+    "clarifyDrafts",
+    "deferredConcerns",
+    "resolvedConcerns",
+  ] as const;
+  const changed = contentKeys.some(
+    (key) =>
+      key in partial &&
+      JSON.stringify(partial[key]) !== JSON.stringify(previous[key]),
+  );
+  return {
+    ...previous,
+    ...partial,
+    ...(changed && previous.lockedAt
+      ? { lockedAt: undefined, handoffStatus: "draft" as const }
+      : {}),
+  };
+}

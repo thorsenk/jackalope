@@ -389,3 +389,79 @@ test("draft exports remain explicitly unapproved and retain pending work and sou
   assert.equal(session.lockedAt, undefined);
   assert.equal(session.claims.length, 0);
 });
+
+test("navigation preserves approval but pending exported revisions require review", () => {
+  const { patchWorkshopSession } = require(path.join(lib, "session.ts"));
+  const { isBriefApproved, isLockReady } = require(
+    path.join(lib, "storage.ts"),
+  );
+  const { LOCK_GATE_KINDS } = require(path.join(lib, "types.ts"));
+  const session = {
+    ...createEmptySession(),
+    lockedAt: "2026-10-20T00:00:00Z",
+    handoffStatus: "ready",
+    claims: LOCK_GATE_KINDS.map((kind) => ({
+      id: kind,
+      kind,
+      text: "Accepted fixture",
+      status: "accepted",
+    })),
+  };
+  const visited = patchWorkshopSession(session, {
+    stage: "clarify",
+    clarifyIndex: 2,
+    claims: [...session.claims],
+  });
+  assert.equal(visited.lockedAt, session.lockedAt);
+  assert.equal(isBriefApproved(visited), true);
+  const revised = patchWorkshopSession(visited, {
+    clarifyDrafts: { taste_bar: "Pending revision" },
+  });
+  assert.equal(revised.lockedAt, undefined);
+  assert.equal(revised.handoffStatus, "draft");
+  assert.equal(isLockReady(revised.claims, revised), false);
+  assert.equal(
+    isBriefApproved({ ...session, clarifyDrafts: revised.clarifyDrafts }),
+    false,
+  );
+  assert.ok(
+    briefToMarkdown({
+      ...session,
+      clarifyDrafts: revised.clarifyDrafts,
+    }).includes("Status: Draft — not approved"),
+  );
+});
+
+test("accepting wording settles its draft and keeps alternate drafts as history", () => {
+  const { recordWorkshopDecision } = require(path.join(lib, "decisions.ts"));
+  const session = {
+    ...createEmptySession(),
+    clarifyDrafts: {
+      taste_bar: "Warm and direct",
+      shared_term: "Still undecided",
+    },
+  };
+  const next = {
+    id: "choice",
+    kind: "taste_bar",
+    text: "Warm and direct",
+    status: "accepted",
+  };
+  const result = recordWorkshopDecision(session, next);
+  assert.equal(result.clarifyDrafts.taste_bar, undefined);
+  assert.equal(result.clarifyDrafts.shared_term, "Still undecided");
+  assert.equal(
+    result.claims.filter((claim) => claim.status === "accepted").length,
+    1,
+  );
+  const alternate = recordWorkshopDecision(session, {
+    ...next,
+    text: "Quiet and direct",
+  });
+  assert.ok(
+    alternate.claims.some(
+      (claim) =>
+        claim.text === "Warm and direct" && claim.status === "reframed",
+    ),
+  );
+});
