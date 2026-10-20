@@ -15,7 +15,12 @@ export function SourceReference({
         {label}
         <ChevronDown className="disclosure-icon" aria-hidden="true" />
       </summary>
-      <div className="markdown-content source-reading">
+      <div
+        className="markdown-content source-reading"
+        role="region"
+        aria-label={`${label} content`}
+        tabIndex={0}
+      >
         <Markdown>{source}</Markdown>
       </div>
     </details>

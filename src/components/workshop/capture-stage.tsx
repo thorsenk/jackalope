@@ -364,7 +364,12 @@ export function CaptureStage({
             </div>
           ) : current ? (
             <>
-              <div className="document-reading markdown-content">
+              <div
+                className="document-reading markdown-content"
+                role="region"
+                aria-label="Source document"
+                tabIndex={0}
+              >
                 {(readAll ? sections : [current]).map((section) => (
                   <article id={section.id} key={section.id}>
                     {readAll && <h3>{section.title}</h3>}
@@ -376,7 +381,7 @@ export function CaptureStage({
                 <div className="section-pagination">
                   <span>
                     {sectionIndex + 1} / {sections.length} ·{" "}
-                    {words.toLocaleString()} words
+                    {words.toLocaleString()} {words === 1 ? "word" : "words"}
                   </span>
                   <div className="inline-actions">
                     <IconAction

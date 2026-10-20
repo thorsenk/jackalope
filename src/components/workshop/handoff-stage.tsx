@@ -37,7 +37,6 @@ import {
 } from "@/lib/export";
 import { isBriefApproved } from "@/lib/storage";
 import { decisionTextForDisplay } from "@/lib/decisions";
-import { HelpTip } from "./workshop-controls";
 import { SourceReference } from "./source-reference";
 
 export function HandoffStage({
@@ -82,7 +81,7 @@ export function HandoffStage({
           <p className="muted-text">
             {approved
               ? "Download or copy your approved brief."
-              : "Not approved. Undecided questions and draft wording stay visible in the download."}
+              : "Not approved. Includes open questions and draft wording."}
           </p>
         </div>
         <Badge variant="secondary">
@@ -115,17 +114,15 @@ export function HandoffStage({
           </Button>
           <span className="sr-only" role="status">
             {copied
-              ? "Brief copied."
+              ? approved
+                ? "Brief copied."
+                : "Draft copied."
               : copyState === "fail"
                 ? "Copy failed. Download the brief instead."
                 : ""}
           </span>
         </div>
         <div className="inline-actions">
-          <HelpTip label="About export">
-            Files download to your device. Nothing is sent to another person. A
-            backup includes all source and decision history.
-          </HelpTip>
           <DropdownMenu>
             <DropdownMenuTrigger
               render={

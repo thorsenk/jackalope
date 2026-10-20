@@ -172,6 +172,7 @@ export function ClarifyStage({
             <FieldLabel htmlFor="decision">Your draft</FieldLabel>
             <Textarea
               id="decision"
+              autoFocus={reframing}
               value={draft}
               onChange={(event) =>
                 onChange({

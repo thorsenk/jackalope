@@ -899,7 +899,7 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 8px;
 }
 .brief-document {
   border: 1px solid var(--border);
@@ -1404,6 +1404,9 @@ p {
   .decision-workspace > .outline-menu {
     display: block;
   }
+  .decision-heading .eyebrow {
+    display: none;
+  }
   .decision-focus textarea {
     font-size: 16px;
   }
@@ -1420,4 +1423,10 @@ p {
     gap: 3px;
     padding-inline: 4px;
   }
+}
+
+.source-reading:focus-visible,
+.document-reading:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
 }
